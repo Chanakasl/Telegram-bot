@@ -8,23 +8,24 @@ app.use(express.json());
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN; 
 const TMDB_API_KEY = process.env.TMDB_API_KEY; 
 
-// Polling false කල යුතුය (Serverless නිසා)
 const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: false });
 
-// Webhook Route එක
 app.post(`/bot${TELEGRAM_TOKEN}`, (req, res) => {
     bot.processUpdate(req.body);
     res.sendStatus(200);
 });
 
-app.get('/', (req, res) => res.send('Bot is Alive!'));
+app.get('/', (req, res) => res.send('Bot is Alive with Premium Features!'));
 
 module.exports = app;
 
-// --- Bot Logic ---
+// --- Premium Bot Logic ---
 bot.onText(/\.movie (.+)/, async (msg, match) => {
     const chatId = msg.chat.id;
     const movieName = match[1].trim();
+
+    // 1. Searching... මැසේජ් එකක් මුලින්ම යවනවා (User Experience එක වැඩි කරන්න)
+    const searchingMsg = await bot.sendMessage(chatId, `🔍 *Searching for "${movieName}"... Please wait...*`, { parse_mode: 'Markdown' });
 
     try {
         const tmdbSearchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(movieName)}&language=en-US`;
@@ -41,35 +42,74 @@ bot.onText(/\.movie (.+)/, async (msg, match) => {
             const imdbId = movie.imdb_id;
             const tmdbId = movie.id;
 
-            let downloadLinksText = "📥 *Direct Download & Stream Servers:* \n\n";
-            
+            // 2. ලස්සන Inline Buttons සාදාගැනීම
+            let inlineKeyboard = [];
+
             if (imdbId) {
-                downloadLinksText += `🚀 *Server 1 (Multi-Quality):* \n🔗 [Watch / Download Here](https://vidsrc.to/embed/movie/${imdbId})\n\n`;
-                downloadLinksText += `⚡ *Server 2 (High Speed):* \n🔗 [Watch / Download Here](https://embed.su/embed/movie/${imdbId})\n\n`;
-                downloadLinksText += `🌐 *Server 3 (Backup Server):* \n🔗 [Watch / Download Here](https://vidsrc.me/embed/movie?imdb=${imdbId})\n\n`;
+                inlineKeyboard = [
+                    [{ text: "🚀 Server 1 (Multi-Quality)", url: `https://vidsrc.to/embed/movie/${imdbId}` }],
+                    [{ text: "⚡ Server 2 (High Speed)", url: `https://embed.su/embed/movie/${imdbId}` }],
+                    [{ text: "🌐 Server 3 (Backup)", url: `https://vidsrc.me/embed/movie?imdb=${imdbId}` }]
+                ];
             } else {
-                downloadLinksText += `🚀 *Server 1:* \n🔗 [Watch / Download Here](https://vidsrc.to/embed/movie/${tmdbId})\n\n`;
+                inlineKeyboard = [
+                    [{ text: "🚀 Server 1 (Watch/Download)", url: `https://vidsrc.to/embed/movie/${tmdbId}` }]
+                ];
             }
 
+            // මැසේජ් එක Format කිරීම
             const replyMessage = `🎬 *${movie.title}* (${releaseYear})\n\n` +
                                  `⭐ *Rating:* ${movie.vote_average.toFixed(1)}/10\n` +
                                  `🌐 *Language:* ${movie.original_language.toUpperCase()}\n\n` +
                                  `📝 *Overview:* ${movie.overview}\n\n` +
                                  `-----------------------------------\n` +
-                                 `${downloadLinksText}` +
-                                 `💡 _Tip: Open links in Chrome browser to play or download the movie file directly._`;
-            
+                                 `📥 *Select a Server to Stream or Download:* \n` +
+                                 `⏱️ _Note: This message will auto-delete in 5 minutes for copyright protection!_`;
+
+            // කලින් යවපු "Searching..." මැසේජ් එක Delete කරනවා
+            await bot.deleteMessage(chatId, searchingMsg.message_id);
+
+            let sentMessage;
+
+            // Poster එකත් එක්ක Buttons සහ විස්තර යවනවා
             if (movie.poster_path) {
                 const posterUrl = `https://image.tmdb.org/t/p/w500${movie.poster_path}`;
-                await bot.sendPhoto(chatId, posterUrl, { caption: replyMessage, parse_mode: 'Markdown' });
+                sentMessage = await bot.sendPhoto(chatId, posterUrl, { 
+                    caption: replyMessage, 
+                    parse_mode: 'Markdown',
+                    reply_markup: { inline_keyboard: inlineKeyboard }
+                });
             } else {
-                await bot.sendMessage(chatId, replyMessage, { parse_mode: 'Markdown' });
+                sentMessage = await bot.sendMessage(chatId, replyMessage, { 
+                    parse_mode: 'Markdown',
+                    reply_markup: { inline_keyboard: inlineKeyboard }
+                });
             }
+
+            // 3. Auto-Delete Feature (විනාඩි 5කින් මැසේජ් එක Delete වෙන්න සැකසීම)
+            // මිලිසෙකන්ඩ් 300000 කියන්නේ විනාඩි 5ක් (1000 * 60 * 5)
+            setTimeout(async () => {
+                try {
+                    await bot.deleteMessage(chatId, sentMessage.message_id);
+                    console.log(`Message ${sentMessage.message_id} auto-deleted successfully.`);
+                } catch (delError) {
+                    console.error("Failed to auto-delete message:", delError.message);
+                }
+            }, 300000); 
+
         } else {
-            await bot.sendMessage(chatId, '❌ සමාවෙන්න, ඔය නමින් ෆිල්ම් එකක් සොයාගන්න බැරි වුණා.');
+            // සර්ච් කරපු එක නැතිනම් "Searching..." මැසේජ් එක Edit කරනවා
+            await bot.editMessageText('❌ සමාවෙන්න, ඔය නමින් ෆිල්ම් එකක් සොයාගන්න බැරි වුණා.', {
+                chat_id: chatId,
+                message_id: searchingMsg.message_id
+            });
         }
     } catch (error) {
         console.error(error);
-        await bot.sendMessage(chatId, '⚠️ සර්වර් එකේ පොඩි අවුලක් වුණා. පසුව උත්සාහ කරන්න.');
+        // Error එකක් ආවොත් "Searching..." මැසේජ් එක Edit කරනවා
+        await bot.editMessageText('⚠️ සර්වර් එකේ පොඩි අවුලක් වුණා. පසුව උත්සාහ කරන්න.', {
+            chat_id: chatId,
+            message_id: searchingMsg.message_id
+        });
     }
 });
