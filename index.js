@@ -10,13 +10,43 @@ const TMDB_API_KEY = process.env.TMDB_API_KEY;
 
 const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: false });
 
-app.get('/', (req, res) => res.send('CHUCKY MOVIE ZONE Pro is Alive & Running!'));
+// ---- 🌐 1. AUTO WEBHOOK SET කරන HOME PAGE එක ----
+app.get('/', async (req, res) => {
+    try {
+        const vUrl = process.env.VERCEL_URL;
+        if (vUrl) {
+            // Vercel එකෙන් දෙන domain එකෙන් Webhook URL එක auto හදනවා
+            const webhookUrl = `https://${vUrl}/bot${TELEGRAM_TOKEN}`;
+            await bot.setWebHook(webhookUrl);
+            
+            return res.send(`
+                <div style="text-align:center; margin-top:10%; font-family:Arial, sans-serif;">
+                    <h1 style="color:#4CAF50;">CHUCKY MOVIE ZONE Pro is Alive & Running! 🚀</h1>
+                    <p style="font-size:18px; color:#333;">🤖 <b>Webhook Auto-Set Successful!</b></p>
+                    <code style="background:#eee; padding:5px 10px; border-radius:4px; font-size:16px;">${webhookUrl}</code>
+                    <p style="color:#777; margin-top:20px;">දැන් කෙලින්ම Telegram එකට ගිහින් Bot වැඩද බලන්න මචං.</p>
+                </div>
+            `);
+        }
+        res.send('CHUCKY MOVIE ZONE Pro is Alive! (Local Environment)');
+    } catch (error) {
+        console.error("Auto Webhook Error:", error);
+        res.status(500).send(`Webhook Setup Failed: ${error.message}`);
+    }
+});
 
 app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
     try {
         const body = req.body;
         
-        // ---- 1. TEXT COMMANDS HANDLING ----
+        // ---- 💡 LIVE MONITORING LOGS (වෙන අය යූස් කරනවා බලන්න) ----
+        if (body.message && body.message.text) {
+            console.log(`👤 User: ${body.message.from.first_name} (@${body.message.from.username || 'NoUser'}) | 💬 Message: ${body.message.text}`);
+        } else if (body.callback_query) {
+            console.log(`🔘 Button Clicked by: ${body.callback_query.from.first_name} | 📊 Data: ${body.callback_query.data}`);
+        }
+
+        // ---- 2. TEXT COMMANDS HANDLING ----
         if (body.message && body.message.text) {
             const msg = body.message;
             const chatId = msg.chat.id;
@@ -161,7 +191,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 }
             }
 
-            // Other Static Commands
+            // Static Commands
             else if (text === '/imdb250') {
                 const tmdbUrl = `https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=1`;
                 const resApi = await axios.get(tmdbUrl);
@@ -193,7 +223,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
             }
         }
 
-        // ---- 2. INLINE BUTTON CLICKS (CALLBACK QUERIES) ----
+        // ---- 3. INLINE BUTTON CLICKS (CALLBACK QUERIES) ----
         else if (body.callback_query) {
             const cb = body.callback_query;
             const chatId = cb.message.chat.id;
@@ -263,9 +293,9 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 const seasons = tv.number_of_seasons ? `${tv.number_of_seasons} Seasons` : 'N/A';
                 const episodes = tv.number_of_episodes ? `${tv.number_of_episodes} Episodes` : 'N/A';
                 const genres = tv.genres ? tv.genres.map(g => g.name).join(', ') : 'N/A';
-                const cast = tv.credits.credits?.cast ? tv.credits.cast.slice(0, 3).map(c => c.name).join(', ') : (tv.credits.cast ? tv.credits.cast.slice(0, 3).map(c => c.name).join(', ') : 'N/A');
+                const cast = tv.credits && tv.credits.cast ? tv.credits.cast.slice(0, 3).map(c => c.name).join(', ') : 'N/A';
 
-                const trailer = tv.videos?.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
+                const trailer = tv.videos && tv.videos.results ? tv.videos.results.find(v => v.type === 'Trailer' && v.site === 'YouTube') : null;
                 const trailerUrl = trailer ? `https://www.youtube.com/watch?v=${trailer.key}` : `https://www.youtube.com/results?search_query=${encodeURIComponent(tv.name + ' trailer')}`;
                 const subUrl = `https://www.google.com/search?q=${encodeURIComponent(tv.name + ' tv series sinhala subtitles')}`;
 
