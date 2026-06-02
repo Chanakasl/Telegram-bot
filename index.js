@@ -40,7 +40,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 await bot.sendMessage(chatId, welcomeText, { parse_mode: 'HTML' });
             }
 
-            // Movie Search -> Gives a List of 5 Movies
+            // Movie Search
             else if (text.startsWith('/movie ')) {
                 const movieName = text.replace('/movie ', '').trim();
                 const searchingMsg = await bot.sendMessage(chatId, `🔍 <i>Searching for "${movieName}"...</i>`, { parse_mode: 'HTML' });
@@ -48,7 +48,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 try {
                     const searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(movieName)}&language=en-US`;
                     const resApi = await axios.get(searchUrl);
-                    const results = resApi.data.results.slice(0, 5); // මුල් රිසල්ට් 5 විතරක් ගන්නවා
+                    const results = resApi.data.results.slice(0, 5);
 
                     if (results.length > 0) {
                         let inlineKeyboard = [];
@@ -70,7 +70,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 }
             }
 
-            // TV Series Search -> Gives a List of 5 TV Series
+            // TV Series Search
             else if (text.startsWith('/tv ')) {
                 const tvName = text.replace('/tv ', '').trim();
                 const searchingMsg = await bot.sendMessage(chatId, `🔍 <i>Searching TV Series "${tvName}"...</i>`, { parse_mode: 'HTML' });
@@ -100,7 +100,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 }
             }
 
-            // Anime Search -> Gives a List of 5 Anime
+            // Anime Search
             else if (text.startsWith('/anime ')) {
                 const animeName = text.replace('/anime ', '').trim();
                 const searchingMsg = await bot.sendMessage(chatId, `⛩️ <i>Searching Anime "${animeName}"...</i>`, { parse_mode: 'HTML' });
@@ -193,14 +193,13 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
             }
         }
 
-        // ---- 2. INLINE BUTTON CLICKS (CALLBACK QUERIES) HANDLING ----
+        // ---- 2. INLINE BUTTON CLICKS (CALLBACK QUERIES) ----
         else if (body.callback_query) {
             const cb = body.callback_query;
             const chatId = cb.message.chat.id;
             const msgId = cb.message.message_id;
             const data = cb.data;
 
-            // Loading එක අයින් කරන්න මේක අනිවාර්යයි
             await bot.answerCallbackQuery(cb.id);
 
             // Movie Detail Clicked
@@ -232,10 +231,10 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 }
                 inlineKeyboard.push([{ text: "🎬 Trailer", url: trailerUrl }, { text: "📝 Sinhala Subs", url: subUrl }]);
                 
-                let thirdRow = [];
+                let thirdRow = [{ text: "💡 Similar Movies", callback_data: `mov_sim:${movie.id}` }];
                 if (imdbId) thirdRow.push({ text: "⭐ IMDb", url: `https://www.imdb.com/title/${imdbId}` });
-                if (providers) thirdRow.push({ text: "📺 Watch on OTT", url: providers });
-                if(thirdRow.length > 0) inlineKeyboard.push(thirdRow);
+                if (providers) thirdRow.push({ text: "📺 OTT", url: providers });
+                inlineKeyboard.push(thirdRow);
 
                 const replyMessage = `🎬 <b>${movie.title}</b> (${releaseYear})\n\n` +
                                      `⭐ <b>Rating:</b> ${movie.vote_average.toFixed(1)}/10\n` +
@@ -253,21 +252,35 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 }
             }
 
-            // TV Series Detail Clicked
+            // TV Series / Anime Detail Clicked
             else if (data.startsWith('tv_det:') || data.startsWith('ani_det:')) {
                 const tvId = data.split(':')[1];
-                const detailUrl = `https://api.themoviedb.org/3/tv/${tvId}?api_key=${TMDB_API_KEY}&language=en-US`;
+                const detailUrl = `https://api.themoviedb.org/3/tv/${tvId}?api_key=${TMDB_API_KEY}&language=en-US&append_to_response=videos,credits`;
                 const resApi = await axios.get(detailUrl);
                 const tv = resApi.data;
-                const year = tv.first_air_date ? tv.first_air_date.split('-')[0] : 'N/A';
                 
+                const year = tv.first_air_date ? tv.first_air_date.split('-')[0] : 'N/A';
+                const seasons = tv.number_of_seasons ? `${tv.number_of_seasons} Seasons` : 'N/A';
+                const episodes = tv.number_of_episodes ? `${tv.number_of_episodes} Episodes` : 'N/A';
+                const genres = tv.genres ? tv.genres.map(g => g.name).join(', ') : 'N/A';
+                const cast = tv.credits.credits?.cast ? tv.credits.cast.slice(0, 3).map(c => c.name).join(', ') : (tv.credits.cast ? tv.credits.cast.slice(0, 3).map(c => c.name).join(', ') : 'N/A');
+
+                const trailer = tv.videos?.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
+                const trailerUrl = trailer ? `https://www.youtube.com/watch?v=${trailer.key}` : `https://www.youtube.com/results?search_query=${encodeURIComponent(tv.name + ' trailer')}`;
+                const subUrl = `https://www.google.com/search?q=${encodeURIComponent(tv.name + ' tv series sinhala subtitles')}`;
+
                 let inlineKeyboard = [
-                    [{ text: "🚀 Watch Episodes", url: `https://vidsrc.to/embed/tv/${tv.id}` }],
-                    [{ text: "📝 Sinhala Subs", url: `https://www.google.com/search?q=${encodeURIComponent(tv.name + ' tv series sinhala subtitles')}` }]
+                    [{ text: "🚀 Watch Server 1", url: `https://vidsrc.to/embed/tv/${tv.id}` }],
+                    [{ text: "⚡ Watch Server 2", url: `https://embed.su/embed/tv/${tv.id}/1/1` }],
+                    [{ text: "🎬 Trailer", url: trailerUrl }, { text: "📝 Sinhala Subs", url: subUrl }],
+                    [{ text: "💡 Similar Shows", callback_data: `tv_sim:${tv.id}` }]
                 ];
 
                 const msgText = `📺 <b>${tv.name}</b> (${year})\n\n` +
                                 `⭐ <b>Rating:</b> ${tv.vote_average.toFixed(1)}/10\n` +
+                                `⏳ <b>Status:</b> ${seasons} (${episodes})\n` +
+                                `🎭 <b>Genres:</b> ${genres}\n` +
+                                `👥 <b>Cast:</b> ${cast}\n\n` +
                                 `📝 <b>Overview:</b> <i>${tv.overview}</i>\n\n` +
                                 `⚡ <i>CHUCKY MOVIE ZONE PRO</i>`;
                 
@@ -276,6 +289,58 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                     await bot.sendPhoto(chatId, `https://image.tmdb.org/t/p/w500${tv.poster_path}`, { caption: msgText, parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
                 } else {
                     await bot.sendMessage(chatId, msgText, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
+                }
+            }
+
+            // Similar Movies Clicked
+            else if (data.startsWith('mov_sim:')) {
+                const tmdbId = data.split(':')[1];
+                try {
+                    const simUrl = `https://api.themoviedb.org/3/movie/${tmdbId}/similar?api_key=${TMDB_API_KEY}&language=en-US&page=1`;
+                    const resApi = await axios.get(simUrl);
+                    const results = resApi.data.results.slice(0, 5);
+
+                    if (results.length > 0) {
+                        let inlineKeyboard = [];
+                        results.forEach(m => {
+                            const year = m.release_date ? m.release_date.split('-')[0] : 'N/A';
+                            inlineKeyboard.push([{ text: `🎬 ${m.title} (${year})`, callback_data: `mov_det:${m.id}` }]);
+                        });
+                        await bot.sendMessage(chatId, `💡 <b>මේ නිර්මාණයට සමාන තවත් සුපිරි Movies 5ක් මෙන්න:</b>`, {
+                            parse_mode: 'HTML',
+                            reply_markup: { inline_keyboard: inlineKeyboard }
+                        });
+                    } else {
+                        await bot.sendMessage(chatId, `❌ සමාන නිර්මාණ හමු වුණේ නැත.`);
+                    }
+                } catch (err) {
+                    await bot.sendMessage(chatId, `⚠️ Error fetching similar movies.`);
+                }
+            }
+
+            // Similar TV Shows Clicked
+            else if (data.startsWith('tv_sim:')) {
+                const tvId = data.split(':')[1];
+                try {
+                    const simUrl = `https://api.themoviedb.org/3/tv/${tvId}/similar?api_key=${TMDB_API_KEY}&language=en-US&page=1`;
+                    const resApi = await axios.get(simUrl);
+                    const results = resApi.data.results.slice(0, 5);
+
+                    if (results.length > 0) {
+                        let inlineKeyboard = [];
+                        results.forEach(t => {
+                            const year = t.first_air_date ? t.first_air_date.split('-')[0] : 'N/A';
+                            inlineKeyboard.push([{ text: `📺 ${t.name} (${year})`, callback_data: `tv_det:${t.id}` }]);
+                        });
+                        await bot.sendMessage(chatId, `💡 <b>මේ නිර්මාණයට සමාන තවත් සුපිරි TV Shows මෙන්න:</b>`, {
+                            parse_mode: 'HTML',
+                            reply_markup: { inline_keyboard: inlineKeyboard }
+                        });
+                    } else {
+                        await bot.sendMessage(chatId, `❌ සමාන නිර්මාණ හමු වුණේ නැත.`);
+                    }
+                } catch (err) {
+                    await bot.sendMessage(chatId, `⚠️ Error fetching similar shows.`);
                 }
             }
         }
