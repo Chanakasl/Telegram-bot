@@ -10,25 +10,28 @@ const TMDB_API_KEY = process.env.TMDB_API_KEY;
 
 const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: false });
 
-// ---- 🌐 1. AUTO WEBHOOK SET කරන HOME PAGE එක ----
+// ---- 🌐 1. BULLETPROOF AUTO WEBHOOK SET කරන HOME PAGE එක ----
 app.get('/', async (req, res) => {
     try {
-        const vUrl = process.env.VERCEL_URL;
-        if (vUrl) {
-            // Vercel එකෙන් දෙන domain එකෙන් Webhook URL එක auto හදනවා
-            const webhookUrl = `https://${vUrl}/bot${TELEGRAM_TOKEN}`;
+        // බ්‍රවුසර් එකෙන් ලින්ක් එකට එන host (domain) එක කෙලින්ම කියවා ගන්නවා (100% සාර්ථකයි)
+        const host = req.headers.host; 
+        if (host) {
+            const webhookUrl = `https://${host}/bot${TELEGRAM_TOKEN}`;
             await bot.setWebHook(webhookUrl);
             
             return res.send(`
-                <div style="text-align:center; margin-top:10%; font-family:Arial, sans-serif;">
-                    <h1 style="color:#4CAF50;">CHUCKY MOVIE ZONE Pro is Alive & Running! 🚀</h1>
-                    <p style="font-size:18px; color:#333;">🤖 <b>Webhook Auto-Set Successful!</b></p>
-                    <code style="background:#eee; padding:5px 10px; border-radius:4px; font-size:16px;">${webhookUrl}</code>
-                    <p style="color:#777; margin-top:20px;">දැන් කෙලින්ම Telegram එකට ගිහින් Bot වැඩද බලන්න මචං.</p>
+                <div style="text-align:center; margin-top:10%; font-family:Arial, sans-serif; background-color:#f9f9f9; padding:20px;">
+                    <h1 style="color:#2ecc71;">CHUCKY MOVIE ZONE Pro is Alive & Running! 🚀</h1>
+                    <div style="background:#fff; border:1px solid #ddd; padding:20px; display:inline-block; border-radius:8px; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+                        <p style="font-size:18px; color:#333; margin-bottom:5px;">🤖 <b>Webhook Auto-Set Successful!</b></p>
+                        <p style="color:#555; margin-bottom:15px;">ටෙලිග්‍රෑම් එකට ඔයාගේ සර්වර් එක සාර්ථකව සම්බන්ධ කරා.</p>
+                        <code style="background:#2c3e50; color:#fff; padding:8px 12px; border-radius:4px; font-size:14px; display:block; word-break:break-all;">${webhookUrl}</code>
+                    </div>
+                    <p style="color:#e74c3c; margin-top:20px; font-weight:bold;">Now open your Telegram Bot and type /start to test! 🔥</p>
                 </div>
             `);
         }
-        res.send('CHUCKY MOVIE ZONE Pro is Alive! (Local Environment)');
+        res.send('CHUCKY MOVIE ZONE Pro is Alive!');
     } catch (error) {
         console.error("Auto Webhook Error:", error);
         res.status(500).send(`Webhook Setup Failed: ${error.message}`);
