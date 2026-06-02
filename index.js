@@ -23,7 +23,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
 
             // 1. Start & Help Commands
             if (text.startsWith('/start') || text.startsWith('/help')) {
-                const welcomeText = `🎬 <b>Welcome to Premium Movie Bot!</b> 🍿\n\n` +
+                const welcomeText = `🎬 <b>WELCOME TO CHUCKY MOVIE ZONE!</b> 🍿\n\n` +
                                     `මම හරහා ඔයාට ලෝකේ ඕනෑම ෆිල්ම් එකක්, ටීවී සීරීස් එකක් හොයාගන්න පුළුවන්.\n\n` +
                                     `<b>උපදෙස් (Commands):</b>\n` +
                                     `🎥 <code>/movie [name]</code> - ෆිල්ම් එකක් හොයන්න\n` +
