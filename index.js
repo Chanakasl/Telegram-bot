@@ -16,13 +16,6 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
     try {
         const body = req.body;
         
-        // ---- 💡 LIVE MONITORING LOGS (වෙන අය යූස් කරනවා බලන්න) ----
-        if (body.message && body.message.text) {
-            console.log(`👤 User: ${body.message.from.first_name} (@${body.message.from.username || 'NoUser'}) | 💬 Message: ${body.message.text}`);
-        } else if (body.callback_query) {
-            console.log(`🔘 Button Clicked by: ${body.callback_query.from.first_name} | 📊 Data: ${body.callback_query.data}`);
-        }
-
         // ---- 1. TEXT COMMANDS HANDLING ----
         if (body.message && body.message.text) {
             const msg = body.message;
@@ -85,7 +78,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 try {
                     const searchUrl = `https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(tvName)}&language=en-US`;
                     const resApi = await axios.get(searchUrl);
-                    constresults = resApi.data.results.slice(0, 5);
+                    const results = resApi.data.results.slice(0, 5);
 
                     if (results.length > 0) {
                         let inlineKeyboard = [];
@@ -168,7 +161,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 }
             }
 
-            // Static Commands
+            // Other Static Commands
             else if (text === '/imdb250') {
                 const tmdbUrl = `https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=1`;
                 const resApi = await axios.get(tmdbUrl);
@@ -270,9 +263,9 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 const seasons = tv.number_of_seasons ? `${tv.number_of_seasons} Seasons` : 'N/A';
                 const episodes = tv.number_of_episodes ? `${tv.number_of_episodes} Episodes` : 'N/A';
                 const genres = tv.genres ? tv.genres.map(g => g.name).join(', ') : 'N/A';
-                const cast = tv.credits && tv.credits.cast ? tv.credits.cast.slice(0, 3).map(c => c.name).join(', ') : 'N/A';
+                const cast = tv.credits.credits?.cast ? tv.credits.cast.slice(0, 3).map(c => c.name).join(', ') : (tv.credits.cast ? tv.credits.cast.slice(0, 3).map(c => c.name).join(', ') : 'N/A');
 
-                const trailer = tv.videos && tv.videos.results ? tv.videos.results.find(v => v.type === 'Trailer' && v.site === 'YouTube') : null;
+                const trailer = tv.videos?.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
                 const trailerUrl = trailer ? `https://www.youtube.com/watch?v=${trailer.key}` : `https://www.youtube.com/results?search_query=${encodeURIComponent(tv.name + ' trailer')}`;
                 const subUrl = `https://www.google.com/search?q=${encodeURIComponent(tv.name + ' tv series sinhala subtitles')}`;
 
