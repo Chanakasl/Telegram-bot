@@ -18,111 +18,58 @@ app.get('/', (req, res) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>CHUCKY MOVIE ZONE PRO - LOADING...</title>
+        <title>CHUCKY MOVIE ZONE PRO - ONLINE</title>
         <style>
             body { background-color: #050505; color: #00ff00; font-family: 'Courier New', Courier, monospace; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; padding: 20px; box-sizing: border-box; }
             .terminal { width: 100%; max-width: 750px; background: rgba(0, 15, 0, 0.9); border: 1px solid #00ff00; box-shadow: 0 0 30px rgba(0, 255, 0, 0.2); padding: 25px; border-radius: 8px; box-sizing: border-box; }
             .header { border-bottom: 1px solid #00ff00; padding-bottom: 10px; margin-bottom: 20px; font-weight: bold; display: flex; justify-content: space-between; font-size: 14px; letter-spacing: 1px; }
             .output { min-height: 220px; font-size: 15px; line-height: 1.6; }
-            .line { visibility: hidden; margin-bottom: 10px; word-break: break-all; }
-            .success-box { margin-top: 25px; border: 2px dashed #00ff00; padding: 15px; text-align: center; display: none; background: rgba(0, 40, 0, 0.3); }
+            .success-box { margin-top: 25px; border: 2px dashed #00ff00; padding: 15px; text-align: center; background: rgba(0, 40, 0, 0.3); }
             a { color: #000; text-decoration: none; font-weight: bold; background: #00ff00; padding: 8px 15px; border-radius: 4px; display: inline-block; margin-top: 10px; transition: 0.3s; }
             a:hover { background: #fff; box-shadow: 0 0 15px #fff; }
         </style>
     </head>
     <body>
         <div class="terminal">
-            <div class="header"><span>⚡ CHUCKY_CORE_OS_v3.0</span><span>STATUS: INJECTING...</span></div>
+            <div class="header"><span>⚡ CHUCKY_CORE_OS_v3.0</span><span>STATUS: ONLINE</span></div>
             <div class="output">
-                <div class="line" id="l1">[>] Connecting to Vercel Serverless Gateway... [OK]</div>
-                <div class="line" id="l2">[>] Bypassing firewall restrictions... [BYPASSED]</div>
-                <div class="line" id="l3">[>] Loading Environment Variables securely... [TOKEN LOADED]</div>
-                <div class="line" id="l4">[>] Initializing node-telegram-bot-api framework... [DONE]</div>
-                <div class="line" id="l5">[>] Establishing secure tunnel handshake with Telegram API... [CONNECTED]</div>
-                <div class="line" id="l6" style="color: #ffffff; font-weight: bold; text-shadow: 0 0 10px #00ff00;">[+ SUCCESS] CHUCKY MOVIE ZONE PRO IS ALIVE & RUNNING! 🚀</div>
+                <div>[>] Connecting to Vercel Serverless Gateway... [OK]</div>
+                <div>[>] Bypassing firewall restrictions... [BYPASSED]</div>
+                <div>[>] Loading Environment Variables securely... [TOKEN LOADED]</div>
+                <div>[>] Establishing secure tunnel handshake with Telegram API... [CONNECTED]</div>
+                <div style="color: #ffffff; font-weight: bold; text-shadow: 0 0 10px #00ff00; margin-top:10px;">[+ SUCCESS] CHUCKY MOVIE ZONE PRO IS ALIVE & RUNNING! 🚀</div>
             </div>
-            <div class="success-box" id="success">
+            <div class="success-box">
                 <h3 style="margin: 0 0 10px 0; color: #fff; letter-spacing: 2px;">🤖 BOT SYSTEM STATUS: ACTIVE</h3>
                 <p style="margin: 5px 0 15px 0; color: #ccc; font-size: 13px;">Webhook එක සෙට් කරලා නැත්නම් පල්ලෙහා බටන් එක ඔබන්න.</p>
                 <a href="/setup">🚀 SET TELEGRAM WEBHOOK</a>
             </div>
         </div>
-        <script>
-            const lines = ['l1', 'l2', 'l3', 'l4', 'l5', 'l6'];
-            let delay = 400;
-            lines.forEach((id, index) => {
-                setTimeout(() => {
-                    document.getElementById(id).style.visibility = 'visible';
-                    if (index === lines.length - 1) {
-                        setTimeout(() => { document.getElementById('success').style.display = 'block'; document.title = "CHUCKY MOVIE ZONE - ONLINE"; }, 800);
-                    }
-                }, delay);
-                delay += Math.floor(Math.random() * 500) + 400; 
-            });
-        </script>
     </body>
     </html>
     `);
 });
 
-// ---- 🛡️ 2. CUSTOM AD-FREE VIDEO PLAYER ROUTE ----
-app.get('/watch', (req, res) => {
-    const { type, id } = req.query;
-    // වර්ගය අනුව අදාල සර්වර් ලින්ක් එක හදනවා
-    let videoUrl = type === 'movie' ? `https://vidsrc.to/embed/movie/${id}` : `https://vidsrc.to/embed/tv/${id}`;
-
-    // මෙතන තියෙන 'sandbox' attribute එකෙන් තමයි Pop-up Ads Block කරන්නේ!
-    res.send(`
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>CHUCKY MOVIE ZONE - VIP PLAYER</title>
-        <style>
-            body { margin: 0; padding: 0; background-color: #000; overflow: hidden; height: 100vh; display: flex; justify-content: center; align-items: center; }
-            iframe { width: 100vw; height: 100vh; border: none; }
-        </style>
-    </head>
-    <body>
-        <iframe src="${videoUrl}" sandbox="allow-scripts allow-same-origin allow-presentation" allowfullscreen></iframe>
-    </body>
-    </html>
-    `);
-});
-
-// ---- 🛠️ 3. WEBHOOK එක SET කරන /setup ROUTE එක ----
+// ---- 🛠️ 2. WEBHOOK එක SET කරන /setup ROUTE එක ----
 app.get('/setup', async (req, res) => {
     try {
         const host = req.headers.host; 
         if (host) {
             const webhookUrl = `https://${host}/bot${TELEGRAM_TOKEN}`;
             await bot.setWebHook(webhookUrl);
-            return res.send(`
-                <div style="text-align:center; margin-top:10%; font-family:Arial, sans-serif; background-color:#050505; color:#00ff00; padding:20px; height:100vh;">
-                    <h1 style="color:#00ff00; text-shadow: 0 0 10px #00ff00;">[+] Webhook Setup Successful!</h1>
-                    <div style="background:#111; border:1px solid #00ff00; padding:20px; display:inline-block; border-radius:8px; box-shadow:0 4px 15px rgba(0,255,0,0.2);">
-                        <p style="color:#fff; margin-bottom:15px;">ටෙලිග්‍රෑම් එකට බොට්ව සාර්ථකව සම්බන්ධ කරා මචං.</p>
-                        <code style="background:#00ff00; color:#000; padding:8px 12px; border-radius:4px; font-size:14px; display:block; word-break:break-all; font-weight:bold;">${webhookUrl}</code>
-                    </div>
-                    <p style="color:#fff; margin-top:20px; font-size:18px;">Now open your Telegram Bot and type /start! 🔥</p>
-                </div>
-            `);
+            return res.send(`<h1 style="color:green; text-align:center; margin-top:20%;">✅ Webhook Setup Successful! Go to Telegram and type /start</h1>`);
         }
         res.status(400).send('Error: Host not found!');
     } catch (error) { res.status(500).send(`Webhook Setup Failed: ${error.message}`); }
 });
 
-// ---- 🤖 4. BOT LOGIC ----
+// ---- 🤖 3. BOT LOGIC ----
 app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
     try {
         const body = req.body;
-        const currentHost = req.headers.host; // Vercel Domain එක මෙතනින් ලබාගන්නවා
         
         if (body.message && body.message.text) {
             console.log(`👤 User: ${body.message.from.first_name} | 💬 Message: ${body.message.text}`);
-        } else if (body.callback_query) {
-            console.log(`🔘 Button: ${body.callback_query.from.first_name} | 📊 Data: ${body.callback_query.data}`);
         }
 
         if (body.message && body.message.text) {
@@ -136,14 +83,8 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                                     `<b>📌 Main Commands:</b>\n` +
                                     `🎥 <code>/movie [name]</code> - Search a Movie\n` +
                                     `📺 <code>/tv [name]</code> - Search a TV Series\n` +
-                                    `⛩️ <code>/anime [name]</code> - Search Anime\n` +
-                                    `🎭 <code>/actor [name]</code> - Search Actor/Actress\n\n` +
-                                    `<b>🔥 Explore:</b>\n` +
-                                    `📈 <code>/trending</code> - Today's Top Movies\n` +
-                                    `🍿 <code>/upcoming</code> - Coming Soon Movies\n` +
-                                    `🏆 <code>/imdb250</code> - Top Rated Masterpieces\n` +
-                                    `🎲 <code>/random</code> - Random Suggestion\n\n` +
-                                    `<i>💡 Example: /movie Avengers</i>`;
+                                    `⛩️ <code>/anime [name]</code> - Search Anime\n\n` +
+                                    `⚠️ <b>වැදගත්:</b>\n<i>ඇඩ්ස් (Ads) කරදරයක් නැතුව ෆිල්ම් බලන්න ලින්ක්ස් ඕපන් කරන්න "Brave Browser" එක පාවිච්චි කරන්න!</i> 🦁`;
                 await bot.sendMessage(chatId, welcomeText, { parse_mode: 'HTML' });
             }
 
@@ -184,73 +125,6 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                     } else { await bot.editMessageText('❌ TV Series not found!', { chat_id: chatId, message_id: searchingMsg.message_id }); }
                 } catch (err) { await bot.editMessageText('⚠️ Server Error.', { chat_id: chatId, message_id: searchingMsg.message_id }); }
             }
-
-            else if (text.startsWith('/anime ')) {
-                const animeName = text.replace('/anime ', '').trim();
-                const searchingMsg = await bot.sendMessage(chatId, `⛩️ <i>Searching Anime "${animeName}"...</i>`, { parse_mode: 'HTML' });
-                try {
-                    const searchUrl = `https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(animeName)}&with_genres=16`;
-                    const resApi = await axios.get(searchUrl);
-                    const results = resApi.data.results.slice(0, 5);
-                    if (results.length > 0) {
-                        let inlineKeyboard = [];
-                        results.forEach(anime => {
-                            const year = anime.first_air_date ? anime.first_air_date.split('-')[0] : 'N/A';
-                            inlineKeyboard.push([{ text: `⛩️ ${anime.name} (${year})`, callback_data: `ani_det:${anime.id}` }]);
-                        });
-                        await bot.deleteMessage(chatId, searchingMsg.message_id);
-                        await bot.sendMessage(chatId, `🍿 <b>CHUCKY MOVIE ZONE</b>\n\n<i>"${animeName}" සඳහා ගැලපෙන Anime මෙන්න:</i>`, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
-                    } else { await bot.editMessageText('❌ Anime not found!', { chat_id: chatId, message_id: searchingMsg.message_id }); }
-                } catch (err) { await bot.editMessageText('⚠️ Server Error.', { chat_id: chatId, message_id: searchingMsg.message_id }); }
-            }
-
-            else if (text.startsWith('/actor ')) {
-                const actorName = text.replace('/actor ', '').trim();
-                const searchingMsg = await bot.sendMessage(chatId, `🎭 <i>Searching Actor "${actorName}"...</i>`, { parse_mode: 'HTML' });
-                try {
-                    const searchUrl = `https://api.themoviedb.org/3/search/person?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(actorName)}`;
-                    const resApi = await axios.get(searchUrl);
-                    if (resApi.data.results.length > 0) {
-                        const actor = resApi.data.results[0];
-                        let msgText = `🎭 <b>${actor.name}</b>\n\n<b>🎬 Known For:</b>\n`;
-                        actor.known_for.forEach((m, i) => { msgText += `${i + 1}. ${m.title || m.name}\n`; });
-                        await bot.deleteMessage(chatId, searchingMsg.message_id);
-                        if (actor.profile_path) {
-                            await bot.sendPhoto(chatId, `https://image.tmdb.org/t/p/w500${actor.profile_path}`, { caption: msgText, parse_mode: 'HTML' });
-                        } else { await bot.sendMessage(chatId, msgText, { parse_mode: 'HTML' }); }
-                    } else { await bot.editMessageText('❌ Actor not found!', { chat_id: chatId, message_id: searchingMsg.message_id }); }
-                } catch (err) { await bot.editMessageText('⚠️ Server Error.', { chat_id: chatId, message_id: searchingMsg.message_id }); }
-            }
-
-            else if (text === '/imdb250') {
-                const tmdbUrl = `https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=1`;
-                const resApi = await axios.get(tmdbUrl);
-                const shuffled = resApi.data.results.sort(() => 0.5 - Math.random());
-                let imdbMsg = `🏆 <b>Top Rated Masterpieces:</b>\n\n`;
-                shuffled.slice(0, 5).forEach((m, index) => { imdbMsg += `${index + 1}. <b>${m.title}</b> (⭐ ${m.vote_average.toFixed(1)})\n`; });
-                await bot.sendMessage(chatId, imdbMsg, { parse_mode: 'HTML' });
-            }
-            else if (text === '/trending') {
-                const tmdbUrl = `https://api.themoviedb.org/3/trending/movie/day?api_key=${TMDB_API_KEY}`;
-                const resApi = await axios.get(tmdbUrl);
-                let trendMsg = `🔥 <b>Today's Trending Movies:</b>\n\n`;
-                resApi.data.results.slice(0, 5).forEach((m, index) => { trendMsg += `${index + 1}. <b>${m.title}</b> (${m.vote_average.toFixed(1)})\n`; });
-                await bot.sendMessage(chatId, trendMsg, { parse_mode: 'HTML' });
-            }
-            else if (text === '/upcoming') {
-                const tmdbUrl = `https://api.themoviedb.org/3/movie/upcoming?api_key=${TMDB_API_KEY}&language=en-US&page=1`;
-                const resApi = await axios.get(tmdbUrl);
-                let upMsg = `🍿 <b>Upcoming Movies:</b>\n\n`;
-                resApi.data.results.slice(0, 5).forEach((m, index) => { upMsg += `${index + 1}. <b>${m.title}</b> (${m.release_date})\n`; });
-                await bot.sendMessage(chatId, upMsg, { parse_mode: 'HTML' });
-            }
-            else if (text === '/random') {
-                const randomPage = Math.floor(Math.random() * 10) + 1;
-                const tmdbUrl = `https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=${randomPage}`;
-                const resApi = await axios.get(tmdbUrl);
-                const movie = resApi.data.results[Math.floor(Math.random() * resApi.data.results.length)];
-                await bot.sendMessage(chatId, `🎲 <b>Random Suggestion!</b>\n\nTry watching: <b>${movie.title}</b>`, { parse_mode: 'HTML' });
-            }
         }
 
         // CALLBACK QUERIES
@@ -264,35 +138,24 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
 
             if (data.startsWith('mov_det:')) {
                 const tmdbId = data.split(':')[1];
-                const detailUrl = `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${TMDB_API_KEY}&language=en-US&append_to_response=videos,credits,watch/providers`;
+                const detailUrl = `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${TMDB_API_KEY}&language=en-US&append_to_response=videos,credits`;
                 const resApi = await axios.get(detailUrl);
                 const movie = resApi.data;
 
                 const releaseYear = movie.release_date ? movie.release_date.split('-')[0] : 'N/A';
-                const runtime = movie.runtime ? `${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60}m` : 'N/A';
                 const genres = movie.genres ? movie.genres.map(g => g.name).join(', ') : 'N/A';
-                const cast = movie.credits.cast ? movie.credits.cast.slice(0, 3).map(c => c.name).join(', ') : 'N/A';
-                const imdbId = movie.imdb_id;
+                const imdbId = movie.imdb_id || movie.id;
                 
-                const trailer = movie.videos.results.find(v => v.type === 'Trailer' && v.site === 'YouTube');
-                const trailerUrl = trailer ? `https://www.youtube.com/watch?v=${trailer.key}` : `https://www.youtube.com/results?search_query=${encodeURIComponent(movie.title + ' trailer')}`;
                 const subUrl = `https://www.google.com/search?q=${encodeURIComponent(movie.title + ' sinhala subtitles baiscope zoom.lk')}`;
-                const providers = movie['watch/providers']?.results?.US?.link;
 
-                let inlineKeyboard = [];
-                // මෙන්න මම අලුතින් හදපු Ad-Free සර්වර් ලින්ක් එක දාන තැන
-                inlineKeyboard.push(
-                    [{ text: "🚀 Watch Server 1 (Ad-Free Player)", url: `https://${currentHost}/watch?type=movie&id=${imdbId || movie.id}` }],
-                    [{ text: "⚡ Watch Server 2", url: `https://embed.su/embed/movie/${imdbId || movie.id}` }]
-                );
-                
-                inlineKeyboard.push([{ text: "🎬 Trailer", url: trailerUrl }, { text: "📝 Sinhala Subs", url: subUrl }]);
-                let thirdRow = [{ text: "💡 Similar Movies", callback_data: `mov_sim:${movie.id}` }];
-                if (imdbId) thirdRow.push({ text: "⭐ IMDb", url: `https://www.imdb.com/title/${imdbId}` });
-                if (providers) thirdRow.push({ text: "📺 OTT", url: providers });
-                inlineKeyboard.push(thirdRow);
+                let inlineKeyboard = [
+                    [{ text: "🚀 Server 1 (VidSrc PRO)", url: `https://vidsrc.pro/embed/movie/${imdbId}` }],
+                    [{ text: "⚡ Server 2 (AutoEmbed)", url: `https://autoembed.co/movie/imdb/${imdbId}` }],
+                    [{ text: "🔥 Server 3 (Embed.su)", url: `https://embed.su/embed/movie/${imdbId}` }],
+                    [{ text: "📝 Download Sinhala Subs", url: subUrl }]
+                ];
 
-                const replyMessage = `🎬 <b>${movie.title}</b> (${releaseYear})\n\n⭐ <b>Rating:</b> ${movie.vote_average.toFixed(1)}/10\n⏳ <b>Runtime:</b> ${runtime}\n🎭 <b>Genres:</b> ${genres}\n👥 <b>Cast:</b> ${cast}\n\n📝 <b>Overview:</b> <i>${movie.overview}</i>\n\n⚡ <i>CHUCKY MOVIE ZONE PRO</i>`;
+                const replyMessage = `🎬 <b>${movie.title}</b> (${releaseYear})\n\n⭐ <b>Rating:</b> ${movie.vote_average.toFixed(1)}/10\n🎭 <b>Genres:</b> ${genres}\n\n📝 <b>Overview:</b> <i>${movie.overview}</i>\n\n⚠️ <b>NOTE:</b> <i>To watch without annoying ads, please open the server links using <b>Brave Browser</b>.</i> 🦁`;
 
                 await bot.deleteMessage(chatId, msgId);
                 if (movie.poster_path) {
@@ -300,69 +163,29 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 } else { await bot.sendMessage(chatId, replyMessage, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } }); }
             }
 
-            else if (data.startsWith('tv_det:') || data.startsWith('ani_det:')) {
+            else if (data.startsWith('tv_det:')) {
                 const tvId = data.split(':')[1];
                 const detailUrl = `https://api.themoviedb.org/3/tv/${tvId}?api_key=${TMDB_API_KEY}&language=en-US&append_to_response=videos,credits`;
                 const resApi = await axios.get(detailUrl);
                 const tv = resApi.data;
                 
                 const year = tv.first_air_date ? tv.first_air_date.split('-')[0] : 'N/A';
-                const seasons = tv.number_of_seasons ? `${tv.number_of_seasons} Seasons` : 'N/A';
-                const episodes = tv.number_of_episodes ? `${tv.number_of_episodes} Episodes` : 'N/A';
                 const genres = tv.genres ? tv.genres.map(g => g.name).join(', ') : 'N/A';
-                const cast = tv.credits && tv.credits.cast ? tv.credits.cast.slice(0, 3).map(c => c.name).join(', ') : 'N/A';
-
-                const trailer = tv.videos && tv.videos.results ? tv.videos.results.find(v => v.type === 'Trailer' && v.site === 'YouTube') : null;
-                const trailerUrl = trailer ? `https://www.youtube.com/watch?v=${trailer.key}` : `https://www.youtube.com/results?search_query=${encodeURIComponent(tv.name + ' trailer')}`;
                 const subUrl = `https://www.google.com/search?q=${encodeURIComponent(tv.name + ' tv series sinhala subtitles')}`;
 
                 let inlineKeyboard = [
-                    [{ text: "🚀 Watch Server 1 (Ad-Free Player)", url: `https://${currentHost}/watch?type=tv&id=${tv.id}` }],
-                    [{ text: "⚡ Watch Server 2", url: `https://embed.su/embed/tv/${tv.id}/1/1` }],
-                    [{ text: "🎬 Trailer", url: trailerUrl }, { text: "📝 Sinhala Subs", url: subUrl }],
-                    [{ text: "💡 Similar Shows", callback_data: `tv_sim:${tv.id}` }]
+                    [{ text: "🚀 Server 1 (VidSrc PRO)", url: `https://vidsrc.pro/embed/tv/${tv.id}` }],
+                    [{ text: "⚡ Server 2 (AutoEmbed)", url: `https://autoembed.co/tv/tmdb/${tv.id}-1-1` }],
+                    [{ text: "🔥 Server 3 (Embed.su)", url: `https://embed.su/embed/tv/${tv.id}/1/1` }],
+                    [{ text: "📝 Download Sinhala Subs", url: subUrl }]
                 ];
 
-                const msgText = `📺 <b>${tv.name}</b> (${year})\n\n⭐ <b>Rating:</b> ${tv.vote_average.toFixed(1)}/10\n⏳ <b>Status:</b> ${seasons} (${episodes})\n🎭 <b>Genres:</b> ${genres}\n👥 <b>Cast:</b> ${cast}\n\n📝 <b>Overview:</b> <i>${tv.overview}</i>\n\n⚡ <i>CHUCKY MOVIE ZONE PRO</i>`;
+                const replyMessage = `📺 <b>${tv.name}</b> (${year})\n\n⭐ <b>Rating:</b> ${tv.vote_average.toFixed(1)}/10\n🎭 <b>Genres:</b> ${genres}\n\n📝 <b>Overview:</b> <i>${tv.overview}</i>\n\n⚠️ <b>NOTE:</b> <i>To watch without annoying ads, please open the server links using <b>Brave Browser</b>.</i> 🦁`;
                 
                 await bot.deleteMessage(chatId, msgId);
                 if (tv.poster_path) {
-                    await bot.sendPhoto(chatId, `https://image.tmdb.org/t/p/w500${tv.poster_path}`, { caption: msgText, parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
-                } else { await bot.sendMessage(chatId, msgText, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } }); }
-            }
-
-            else if (data.startsWith('mov_sim:')) {
-                const tmdbId = data.split(':')[1];
-                try {
-                    const simUrl = `https://api.themoviedb.org/3/movie/${tmdbId}/similar?api_key=${TMDB_API_KEY}&language=en-US&page=1`;
-                    const resApi = await axios.get(simUrl);
-                    const results = resApi.data.results.slice(0, 5);
-                    if (results.length > 0) {
-                        let inlineKeyboard = [];
-                        results.forEach(m => {
-                            const year = m.release_date ? m.release_date.split('-')[0] : 'N/A';
-                            inlineKeyboard.push([{ text: `🎬 ${m.title} (${year})`, callback_data: `mov_det:${m.id}` }]);
-                        });
-                        await bot.sendMessage(chatId, `💡 <b>සමාන Movies 5ක් මෙන්න:</b>`, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
-                    } else { await bot.sendMessage(chatId, `❌ සමාන නිර්මාණ හමු වුණේ නැත.`); }
-                } catch (err) { await bot.sendMessage(chatId, `⚠️ Error fetching similar movies.`); }
-            }
-
-            else if (data.startsWith('tv_sim:')) {
-                const tvId = data.split(':')[1];
-                try {
-                    const simUrl = `https://api.themoviedb.org/3/tv/${tvId}/similar?api_key=${TMDB_API_KEY}&language=en-US&page=1`;
-                    const resApi = await axios.get(simUrl);
-                    const results = resApi.data.results.slice(0, 5);
-                    if (results.length > 0) {
-                        let inlineKeyboard = [];
-                        results.forEach(t => {
-                            const year = t.first_air_date ? t.first_air_date.split('-')[0] : 'N/A';
-                            inlineKeyboard.push([{ text: `📺 ${t.name} (${year})`, callback_data: `tv_det:${t.id}` }]);
-                        });
-                        await bot.sendMessage(chatId, `💡 <b>සමාන TV Shows මෙන්න:</b>`, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
-                    } else { await bot.sendMessage(chatId, `❌ සමාන නිර්මාණ හමු වුණේ නැත.`); }
-                } catch (err) { await bot.sendMessage(chatId, `⚠️ Error fetching similar shows.`); }
+                    await bot.sendPhoto(chatId, `https://image.tmdb.org/t/p/w500${tv.poster_path}`, { caption: replyMessage, parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
+                } else { await bot.sendMessage(chatId, replyMessage, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } }); }
             }
         }
     } catch (e) { console.error("Webhook Error:", e); } finally { res.sendStatus(200); }
