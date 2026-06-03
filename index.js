@@ -148,7 +148,7 @@ app.get('/setup', async (req, res) => {
                 <div style="text-align:center; margin-top:10%; font-family:Arial, sans-serif; background-color:#050505; color:#00ff00; padding:20px; height:100vh;">
                     <h1 style="color:#00ff00; text-shadow: 0 0 10px #00ff00;">[+] Webhook Setup Successful!</h1>
                     <div style="background:#111; border:1px solid #00ff00; padding:20px; display:inline-block; border-radius:8px; box-shadow:0 4px 15px rgba(0,255,0,0.2);">
-                        <p style="color:#fff; margin-bottom:15px;">ටෙලිග්‍රෑම් එකට බොට්ව සාර්ථකව සම්බන්ධ කරා මචං.</p>
+                        <p style="color:#fff; margin-bottom:15px;">BOT CONNECTED SUCCESSFUL.</p>
                         <code style="background:#00ff00; color:#000; padding:8px 12px; border-radius:4px; font-size:14px; display:block; word-break:break-all; font-weight:bold;">${webhookUrl}</code>
                     </div>
                     <p style="color:#fff; margin-top:20px; font-size:18px;">Now open your Telegram Bot and type /start! 🔥</p>
