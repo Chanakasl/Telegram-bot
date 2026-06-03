@@ -10,10 +10,14 @@ const TMDB_API_KEY = process.env.TMDB_API_KEY;
 
 const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: false });
 
-// ---- 🌐 1. BULLETPROOF AUTO WEBHOOK SET කරන HOME PAGE එක ----
-app.get('/', async (req, res) => {
+// ---- 🌐 1. සාමාන්‍ය HOME PAGE එක ----
+app.get('/', (req, res) => {
+    res.send('<h1 style="color:green; text-align:center; margin-top:20%;">CHUCKY MOVIE ZONE Pro is Alive! 🚀<br><br><span style="color:gray; font-size:18px;">Webhook එක සෙට් කරන්න /setup ලින්ක් එකට යන්න.</span></h1>');
+});
+
+// ---- 🛠️ 2. WEBHOOK එක SET කරන අලුත් /setup ROUTE එක ----
+app.get('/setup', async (req, res) => {
     try {
-        // බ්‍රවුසර් එකෙන් ලින්ක් එකට එන host (domain) එක කෙලින්ම කියවා ගන්නවා (100% සාර්ථකයි)
         const host = req.headers.host; 
         if (host) {
             const webhookUrl = `https://${host}/bot${TELEGRAM_TOKEN}`;
@@ -21,41 +25,40 @@ app.get('/', async (req, res) => {
             
             return res.send(`
                 <div style="text-align:center; margin-top:10%; font-family:Arial, sans-serif; background-color:#f9f9f9; padding:20px;">
-                    <h1 style="color:#2ecc71;">CHUCKY MOVIE ZONE Pro is Alive & Running! 🚀</h1>
+                    <h1 style="color:#2ecc71;">✅ Webhook Setup Successful!</h1>
                     <div style="background:#fff; border:1px solid #ddd; padding:20px; display:inline-block; border-radius:8px; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
-                        <p style="font-size:18px; color:#333; margin-bottom:5px;">🤖 <b>Webhook Auto-Set Successful!</b></p>
-                        <p style="color:#555; margin-bottom:15px;">ටෙලිග්‍රෑම් එකට ඔයාගේ සර්වර් එක සාර්ථකව සම්බන්ධ කරා.</p>
+                        <p style="color:#555; margin-bottom:15px;">ටෙලිග්‍රෑම් එකට ඔයාගේ සර්වර් එක 100%ක් සාර්ථකව සම්බන්ධ කරා.</p>
                         <code style="background:#2c3e50; color:#fff; padding:8px 12px; border-radius:4px; font-size:14px; display:block; word-break:break-all;">${webhookUrl}</code>
                     </div>
-                    <p style="color:#e74c3c; margin-top:20px; font-weight:bold;">Now open your Telegram Bot and type /start to test! 🔥</p>
+                    <p style="color:#e74c3c; margin-top:20px; font-size:18px; font-weight:bold;">Now open your Telegram Bot and type /start to test! 🔥</p>
                 </div>
             `);
         }
-        res.send('CHUCKY MOVIE ZONE Pro is Alive!');
+        res.status(400).send('Error: Host not found!');
     } catch (error) {
         console.error("Auto Webhook Error:", error);
         res.status(500).send(`Webhook Setup Failed: ${error.message}`);
     }
 });
 
+// ---- 🤖 3. BOT LOGIC (මැසේජ් වලට රිප්ලයි කරන කොටස) ----
 app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
     try {
         const body = req.body;
         
-        // ---- 💡 LIVE MONITORING LOGS (වෙන අය යූස් කරනවා බලන්න) ----
+        // ---- 💡 LIVE MONITORING LOGS ----
         if (body.message && body.message.text) {
             console.log(`👤 User: ${body.message.from.first_name} (@${body.message.from.username || 'NoUser'}) | 💬 Message: ${body.message.text}`);
         } else if (body.callback_query) {
             console.log(`🔘 Button Clicked by: ${body.callback_query.from.first_name} | 📊 Data: ${body.callback_query.data}`);
         }
 
-        // ---- 2. TEXT COMMANDS HANDLING ----
+        // TEXT COMMANDS
         if (body.message && body.message.text) {
             const msg = body.message;
             const chatId = msg.chat.id;
             const text = msg.text;
 
-            // Start & Help Command
             if (text.startsWith('/start') || text.startsWith('/help')) {
                 const welcomeText = `🎬 <b>Welcome to CHUCKY MOVIE ZONE!</b> 🍿\n\n` +
                                     `ලෝකේ තියෙන ඕනෑම Movie, TV Series හෝ Anime එකක් ලේසියෙන්ම සොයාගන්න!\n\n` +
@@ -73,113 +76,79 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 await bot.sendMessage(chatId, welcomeText, { parse_mode: 'HTML' });
             }
 
-            // Movie Search
             else if (text.startsWith('/movie ')) {
                 const movieName = text.replace('/movie ', '').trim();
                 const searchingMsg = await bot.sendMessage(chatId, `🔍 <i>Searching for "${movieName}"...</i>`, { parse_mode: 'HTML' });
-
                 try {
                     const searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(movieName)}&language=en-US`;
                     const resApi = await axios.get(searchUrl);
                     const results = resApi.data.results.slice(0, 5);
-
                     if (results.length > 0) {
                         let inlineKeyboard = [];
                         results.forEach(movie => {
                             const year = movie.release_date ? movie.release_date.split('-')[0] : 'N/A';
                             inlineKeyboard.push([{ text: `🎬 ${movie.title} (${year})`, callback_data: `mov_det:${movie.id}` }]);
                         });
-
                         await bot.deleteMessage(chatId, searchingMsg.message_id);
-                        await bot.sendMessage(chatId, `🍿 <b>CHUCKY MOVIE ZONE</b>\n\n<i>"${movieName}" සඳහා ගැලපෙන ප්‍රතිඵල මෙන්න. ඔයාට අවශ්‍ය එක ක්ලික් කරන්න:</i>`, {
-                            parse_mode: 'HTML',
-                            reply_markup: { inline_keyboard: inlineKeyboard }
-                        });
+                        await bot.sendMessage(chatId, `🍿 <b>CHUCKY MOVIE ZONE</b>\n\n<i>"${movieName}" සඳහා ගැලපෙන ප්‍රතිඵල මෙන්න:</i>`, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
                     } else {
-                        await bot.editMessageText('❌ Movie not found! වෙනත් නමක් උත්සාහ කරන්න.', { chat_id: chatId, message_id: searchingMsg.message_id });
+                        await bot.editMessageText('❌ Movie not found!', { chat_id: chatId, message_id: searchingMsg.message_id });
                     }
-                } catch (err) {
-                    await bot.editMessageText('⚠️ Server Error.', { chat_id: chatId, message_id: searchingMsg.message_id });
-                }
+                } catch (err) { await bot.editMessageText('⚠️ Server Error.', { chat_id: chatId, message_id: searchingMsg.message_id }); }
             }
 
-            // TV Series Search
             else if (text.startsWith('/tv ')) {
                 const tvName = text.replace('/tv ', '').trim();
                 const searchingMsg = await bot.sendMessage(chatId, `🔍 <i>Searching TV Series "${tvName}"...</i>`, { parse_mode: 'HTML' });
-                
                 try {
                     const searchUrl = `https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(tvName)}&language=en-US`;
                     const resApi = await axios.get(searchUrl);
                     const results = resApi.data.results.slice(0, 5);
-
                     if (results.length > 0) {
                         let inlineKeyboard = [];
                         results.forEach(tv => {
                             const year = tv.first_air_date ? tv.first_air_date.split('-')[0] : 'N/A';
                             inlineKeyboard.push([{ text: `📺 ${tv.name} (${year})`, callback_data: `tv_det:${tv.id}` }]);
                         });
-
                         await bot.deleteMessage(chatId, searchingMsg.message_id);
-                        await bot.sendMessage(chatId, `🍿 <b>CHUCKY MOVIE ZONE</b>\n\n<i>"${tvName}" සඳහා ගැලපෙන TV Series මෙන්න:</i>`, {
-                            parse_mode: 'HTML',
-                            reply_markup: { inline_keyboard: inlineKeyboard }
-                        });
+                        await bot.sendMessage(chatId, `🍿 <b>CHUCKY MOVIE ZONE</b>\n\n<i>"${tvName}" සඳහා ගැලපෙන TV Series මෙන්න:</i>`, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
                     } else {
                         await bot.editMessageText('❌ TV Series not found!', { chat_id: chatId, message_id: searchingMsg.message_id });
                     }
-                } catch (err) {
-                    await bot.editMessageText('⚠️ Server Error.', { chat_id: chatId, message_id: searchingMsg.message_id });
-                }
+                } catch (err) { await bot.editMessageText('⚠️ Server Error.', { chat_id: chatId, message_id: searchingMsg.message_id }); }
             }
 
-            // Anime Search
             else if (text.startsWith('/anime ')) {
                 const animeName = text.replace('/anime ', '').trim();
                 const searchingMsg = await bot.sendMessage(chatId, `⛩️ <i>Searching Anime "${animeName}"...</i>`, { parse_mode: 'HTML' });
-                
                 try {
                     const searchUrl = `https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(animeName)}&with_genres=16`;
                     const resApi = await axios.get(searchUrl);
                     const results = resApi.data.results.slice(0, 5);
-
                     if (results.length > 0) {
                         let inlineKeyboard = [];
                         results.forEach(anime => {
                             const year = anime.first_air_date ? anime.first_air_date.split('-')[0] : 'N/A';
                             inlineKeyboard.push([{ text: `⛩️ ${anime.name} (${year})`, callback_data: `ani_det:${anime.id}` }]);
                         });
-
                         await bot.deleteMessage(chatId, searchingMsg.message_id);
-                        await bot.sendMessage(chatId, `🍿 <b>CHUCKY MOVIE ZONE</b>\n\n<i>"${animeName}" සඳහා ගැලපෙන Anime මෙන්න:</i>`, {
-                            parse_mode: 'HTML',
-                            reply_markup: { inline_keyboard: inlineKeyboard }
-                        });
+                        await bot.sendMessage(chatId, `🍿 <b>CHUCKY MOVIE ZONE</b>\n\n<i>"${animeName}" සඳහා ගැලපෙන Anime මෙන්න:</i>`, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
                     } else {
                         await bot.editMessageText('❌ Anime not found!', { chat_id: chatId, message_id: searchingMsg.message_id });
                     }
-                } catch (err) {
-                    await bot.editMessageText('⚠️ Server Error.', { chat_id: chatId, message_id: searchingMsg.message_id });
-                }
+                } catch (err) { await bot.editMessageText('⚠️ Server Error.', { chat_id: chatId, message_id: searchingMsg.message_id }); }
             }
 
-            // Actor Search
             else if (text.startsWith('/actor ')) {
                 const actorName = text.replace('/actor ', '').trim();
                 const searchingMsg = await bot.sendMessage(chatId, `🎭 <i>Searching Actor "${actorName}"...</i>`, { parse_mode: 'HTML' });
-                
                 try {
                     const searchUrl = `https://api.themoviedb.org/3/search/person?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(actorName)}`;
                     const resApi = await axios.get(searchUrl);
-                    
                     if (resApi.data.results.length > 0) {
                         const actor = resApi.data.results[0];
-                        let msgText = `🎭 <b>${actor.name}</b>\n\n<b>🎬 Known For (ප්‍රසිද්ධ චිත්‍රපට):</b>\n`;
-                        actor.known_for.forEach((m, i) => {
-                            msgText += `${i + 1}. ${m.title || m.name}\n`;
-                        });
-                        msgText += `\n<i>(Type /movie [name] to watch these!)</i>`;
-                        
+                        let msgText = `🎭 <b>${actor.name}</b>\n\n<b>🎬 Known For:</b>\n`;
+                        actor.known_for.forEach((m, i) => { msgText += `${i + 1}. ${m.title || m.name}\n`; });
                         await bot.deleteMessage(chatId, searchingMsg.message_id);
                         if (actor.profile_path) {
                             await bot.sendPhoto(chatId, `https://image.tmdb.org/t/p/w500${actor.profile_path}`, { caption: msgText, parse_mode: 'HTML' });
@@ -189,17 +158,14 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                     } else {
                         await bot.editMessageText('❌ Actor not found!', { chat_id: chatId, message_id: searchingMsg.message_id });
                     }
-                } catch (err) {
-                    await bot.editMessageText('⚠️ Server Error.', { chat_id: chatId, message_id: searchingMsg.message_id });
-                }
+                } catch (err) { await bot.editMessageText('⚠️ Server Error.', { chat_id: chatId, message_id: searchingMsg.message_id }); }
             }
 
-            // Static Commands
             else if (text === '/imdb250') {
                 const tmdbUrl = `https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=1`;
                 const resApi = await axios.get(tmdbUrl);
                 const shuffled = resApi.data.results.sort(() => 0.5 - Math.random());
-                let imdbMsg = `🏆 <b>Top Rated Masterpieces (CHUCKY MOVIE ZONE):</b>\n\n`;
+                let imdbMsg = `🏆 <b>Top Rated Masterpieces:</b>\n\n`;
                 shuffled.slice(0, 5).forEach((m, index) => { imdbMsg += `${index + 1}. <b>${m.title}</b> (⭐ ${m.vote_average.toFixed(1)})\n`; });
                 await bot.sendMessage(chatId, imdbMsg, { parse_mode: 'HTML' });
             }
@@ -222,11 +188,11 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 const tmdbUrl = `https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=${randomPage}`;
                 const resApi = await axios.get(tmdbUrl);
                 const movie = resApi.data.results[Math.floor(Math.random() * resApi.data.results.length)];
-                await bot.sendMessage(chatId, `🎲 <b>Random Suggestion!</b>\n\nTry watching: <b>${movie.title}</b>\n\n(Type <code>/movie ${movie.title}</code> to get links!)`, { parse_mode: 'HTML' });
+                await bot.sendMessage(chatId, `🎲 <b>Random Suggestion!</b>\n\nTry watching: <b>${movie.title}</b>`, { parse_mode: 'HTML' });
             }
         }
 
-        // ---- 3. INLINE BUTTON CLICKS (CALLBACK QUERIES) ----
+        // CALLBACK QUERIES
         else if (body.callback_query) {
             const cb = body.callback_query;
             const chatId = cb.message.chat.id;
@@ -235,7 +201,6 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
 
             await bot.answerCallbackQuery(cb.id);
 
-            // Movie Detail Clicked
             if (data.startsWith('mov_det:')) {
                 const tmdbId = data.split(':')[1];
                 const detailUrl = `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${TMDB_API_KEY}&language=en-US&append_to_response=videos,credits,watch/providers`;
@@ -269,13 +234,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 if (providers) thirdRow.push({ text: "📺 OTT", url: providers });
                 inlineKeyboard.push(thirdRow);
 
-                const replyMessage = `🎬 <b>${movie.title}</b> (${releaseYear})\n\n` +
-                                     `⭐ <b>Rating:</b> ${movie.vote_average.toFixed(1)}/10\n` +
-                                     `⏳ <b>Runtime:</b> ${runtime}\n` +
-                                     `🎭 <b>Genres:</b> ${genres}\n` +
-                                     `👥 <b>Cast:</b> ${cast}\n\n` +
-                                     `📝 <b>Overview:</b> <i>${movie.overview}</i>\n\n` +
-                                     `⚡ <i>CHUCKY MOVIE ZONE PRO</i>`;
+                const replyMessage = `🎬 <b>${movie.title}</b> (${releaseYear})\n\n⭐ <b>Rating:</b> ${movie.vote_average.toFixed(1)}/10\n⏳ <b>Runtime:</b> ${runtime}\n🎭 <b>Genres:</b> ${genres}\n👥 <b>Cast:</b> ${cast}\n\n📝 <b>Overview:</b> <i>${movie.overview}</i>\n\n⚡ <i>CHUCKY MOVIE ZONE PRO</i>`;
 
                 await bot.deleteMessage(chatId, msgId);
                 if (movie.poster_path) {
@@ -285,7 +244,6 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 }
             }
 
-            // TV Series / Anime Detail Clicked
             else if (data.startsWith('tv_det:') || data.startsWith('ani_det:')) {
                 const tvId = data.split(':')[1];
                 const detailUrl = `https://api.themoviedb.org/3/tv/${tvId}?api_key=${TMDB_API_KEY}&language=en-US&append_to_response=videos,credits`;
@@ -309,13 +267,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                     [{ text: "💡 Similar Shows", callback_data: `tv_sim:${tv.id}` }]
                 ];
 
-                const msgText = `📺 <b>${tv.name}</b> (${year})\n\n` +
-                                `⭐ <b>Rating:</b> ${tv.vote_average.toFixed(1)}/10\n` +
-                                `⏳ <b>Status:</b> ${seasons} (${episodes})\n` +
-                                `🎭 <b>Genres:</b> ${genres}\n` +
-                                `👥 <b>Cast:</b> ${cast}\n\n` +
-                                `📝 <b>Overview:</b> <i>${tv.overview}</i>\n\n` +
-                                `⚡ <i>CHUCKY MOVIE ZONE PRO</i>`;
+                const msgText = `📺 <b>${tv.name}</b> (${year})\n\n⭐ <b>Rating:</b> ${tv.vote_average.toFixed(1)}/10\n⏳ <b>Status:</b> ${seasons} (${episodes})\n🎭 <b>Genres:</b> ${genres}\n👥 <b>Cast:</b> ${cast}\n\n📝 <b>Overview:</b> <i>${tv.overview}</i>\n\n⚡ <i>CHUCKY MOVIE ZONE PRO</i>`;
                 
                 await bot.deleteMessage(chatId, msgId);
                 if (tv.poster_path) {
@@ -325,56 +277,38 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 }
             }
 
-            // Similar Movies Clicked
             else if (data.startsWith('mov_sim:')) {
                 const tmdbId = data.split(':')[1];
                 try {
                     const simUrl = `https://api.themoviedb.org/3/movie/${tmdbId}/similar?api_key=${TMDB_API_KEY}&language=en-US&page=1`;
                     const resApi = await axios.get(simUrl);
                     const results = resApi.data.results.slice(0, 5);
-
                     if (results.length > 0) {
                         let inlineKeyboard = [];
                         results.forEach(m => {
                             const year = m.release_date ? m.release_date.split('-')[0] : 'N/A';
                             inlineKeyboard.push([{ text: `🎬 ${m.title} (${year})`, callback_data: `mov_det:${m.id}` }]);
                         });
-                        await bot.sendMessage(chatId, `💡 <b>මේ නිර්මාණයට සමාන තවත් සුපිරි Movies 5ක් මෙන්න:</b>`, {
-                            parse_mode: 'HTML',
-                            reply_markup: { inline_keyboard: inlineKeyboard }
-                        });
-                    } else {
-                        await bot.sendMessage(chatId, `❌ සමාන නිර්මාණ හමු වුණේ නැත.`);
-                    }
-                } catch (err) {
-                    await bot.sendMessage(chatId, `⚠️ Error fetching similar movies.`);
-                }
+                        await bot.sendMessage(chatId, `💡 <b>සමාන Movies 5ක් මෙන්න:</b>`, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
+                    } else { await bot.sendMessage(chatId, `❌ සමාන නිර්මාණ හමු වුණේ නැත.`); }
+                } catch (err) { await bot.sendMessage(chatId, `⚠️ Error fetching similar movies.`); }
             }
 
-            // Similar TV Shows Clicked
             else if (data.startsWith('tv_sim:')) {
                 const tvId = data.split(':')[1];
                 try {
                     const simUrl = `https://api.themoviedb.org/3/tv/${tvId}/similar?api_key=${TMDB_API_KEY}&language=en-US&page=1`;
                     const resApi = await axios.get(simUrl);
                     const results = resApi.data.results.slice(0, 5);
-
                     if (results.length > 0) {
                         let inlineKeyboard = [];
                         results.forEach(t => {
                             const year = t.first_air_date ? t.first_air_date.split('-')[0] : 'N/A';
                             inlineKeyboard.push([{ text: `📺 ${t.name} (${year})`, callback_data: `tv_det:${t.id}` }]);
                         });
-                        await bot.sendMessage(chatId, `💡 <b>මේ නිර්මාණයට සමාන තවත් සුපිරි TV Shows මෙන්න:</b>`, {
-                            parse_mode: 'HTML',
-                            reply_markup: { inline_keyboard: inlineKeyboard }
-                        });
-                    } else {
-                        await bot.sendMessage(chatId, `❌ සමාන නිර්මාණ හමු වුණේ නැත.`);
-                    }
-                } catch (err) {
-                    await bot.sendMessage(chatId, `⚠️ Error fetching similar shows.`);
-                }
+                        await bot.sendMessage(chatId, `💡 <b>සමාන TV Shows මෙන්න:</b>`, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
+                    } else { await bot.sendMessage(chatId, `❌ සමාන නිර්මාණ හමු වුණේ නැත.`); }
+                } catch (err) { await bot.sendMessage(chatId, `⚠️ Error fetching similar shows.`); }
             }
         }
     } catch (e) {
