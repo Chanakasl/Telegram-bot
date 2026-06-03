@@ -20,82 +20,19 @@ app.get('/', (req, res) => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>CHUCKY MOVIE ZONE PRO - LOADING...</title>
         <style>
-            body {
-                background-color: #050505;
-                color: #00ff00;
-                font-family: 'Courier New', Courier, monospace;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                height: 100vh;
-                margin: 0;
-                overflow: hidden;
-                padding: 20px;
-                box-sizing: border-box;
-            }
-            .terminal {
-                width: 100%;
-                max-width: 750px;
-                background: rgba(0, 15, 0, 0.9);
-                border: 1px solid #00ff00;
-                box-shadow: 0 0 30px rgba(0, 255, 0, 0.2);
-                padding: 25px;
-                border-radius: 8px;
-                box-sizing: border-box;
-            }
-            .header {
-                border-bottom: 1px solid #00ff00;
-                padding-bottom: 10px;
-                margin-bottom: 20px;
-                font-weight: bold;
-                display: flex;
-                justify-content: space-between;
-                font-size: 14px;
-                letter-spacing: 1px;
-            }
-            .output {
-                min-height: 220px;
-                font-size: 15px;
-                line-height: 1.6;
-            }
-            .line {
-                visibility: hidden;
-                margin-bottom: 10px;
-                word-break: break-all;
-            }
-            .success-box {
-                margin-top: 25px;
-                border: 2px dashed #00ff00;
-                padding: 15px;
-                text-align: center;
-                display: none;
-                background: rgba(0, 40, 0, 0.3);
-            }
-            a { 
-                color: #ffffff; 
-                text-decoration: none; 
-                font-weight: bold;
-                background: #00ff00;
-                color: #000;
-                padding: 8px 15px;
-                border-radius: 4px;
-                display: inline-block;
-                margin-top: 10px;
-                transition: 0.3s;
-            }
-            a:hover {
-                background: #fff;
-                box-shadow: 0 0 15px #fff;
-            }
+            body { background-color: #050505; color: #00ff00; font-family: 'Courier New', Courier, monospace; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; padding: 20px; box-sizing: border-box; }
+            .terminal { width: 100%; max-width: 750px; background: rgba(0, 15, 0, 0.9); border: 1px solid #00ff00; box-shadow: 0 0 30px rgba(0, 255, 0, 0.2); padding: 25px; border-radius: 8px; box-sizing: border-box; }
+            .header { border-bottom: 1px solid #00ff00; padding-bottom: 10px; margin-bottom: 20px; font-weight: bold; display: flex; justify-content: space-between; font-size: 14px; letter-spacing: 1px; }
+            .output { min-height: 220px; font-size: 15px; line-height: 1.6; }
+            .line { visibility: hidden; margin-bottom: 10px; word-break: break-all; }
+            .success-box { margin-top: 25px; border: 2px dashed #00ff00; padding: 15px; text-align: center; display: none; background: rgba(0, 40, 0, 0.3); }
+            a { color: #000; text-decoration: none; font-weight: bold; background: #00ff00; padding: 8px 15px; border-radius: 4px; display: inline-block; margin-top: 10px; transition: 0.3s; }
+            a:hover { background: #fff; box-shadow: 0 0 15px #fff; }
         </style>
     </head>
     <body>
         <div class="terminal">
-            <div class="header">
-                <span>⚡ CHUCKY_CORE_OS_v3.0</span>
-                <span>STATUS: INJECTING...</span>
-            </div>
+            <div class="header"><span>⚡ CHUCKY_CORE_OS_v3.0</span><span>STATUS: INJECTING...</span></div>
             <div class="output">
                 <div class="line" id="l1">[>] Connecting to Vercel Serverless Gateway... [OK]</div>
                 <div class="line" id="l2">[>] Bypassing firewall restrictions... [BYPASSED]</div>
@@ -110,24 +47,16 @@ app.get('/', (req, res) => {
                 <a href="/setup">🚀 SET TELEGRAM WEBHOOK</a>
             </div>
         </div>
-
         <script>
-            // එකින් එක ලයින් වැටෙන්න හදපු Script එක
             const lines = ['l1', 'l2', 'l3', 'l4', 'l5', 'l6'];
             let delay = 400;
-
             lines.forEach((id, index) => {
                 setTimeout(() => {
                     document.getElementById(id).style.visibility = 'visible';
-                    // අන්තිම ලයින් එක වැටුනට පස්සේ setup බොක්ස් එක පෙන්වන්න
                     if (index === lines.length - 1) {
-                        setTimeout(() => {
-                            document.getElementById('success').style.display = 'block';
-                            document.title = "CHUCKY MOVIE ZONE - ONLINE";
-                        }, 800);
+                        setTimeout(() => { document.getElementById('success').style.display = 'block'; document.title = "CHUCKY MOVIE ZONE - ONLINE"; }, 800);
                     }
                 }, delay);
-                // හැකර් ටයිපින් ඉෆෙක්ට් එකක් එන්න සෙකන්ඩ් ගාන සසම්බවී (random) කලා
                 delay += Math.floor(Math.random() * 500) + 400; 
             });
         </script>
@@ -136,19 +65,44 @@ app.get('/', (req, res) => {
     `);
 });
 
-// ---- 🛠️ 2. WEBHOOK එක SET කරන /setup ROUTE එක ----
+// ---- 🛡️ 2. CUSTOM AD-FREE VIDEO PLAYER ROUTE ----
+app.get('/watch', (req, res) => {
+    const { type, id } = req.query;
+    // වර්ගය අනුව අදාල සර්වර් ලින්ක් එක හදනවා
+    let videoUrl = type === 'movie' ? `https://vidsrc.to/embed/movie/${id}` : `https://vidsrc.to/embed/tv/${id}`;
+
+    // මෙතන තියෙන 'sandbox' attribute එකෙන් තමයි Pop-up Ads Block කරන්නේ!
+    res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>CHUCKY MOVIE ZONE - VIP PLAYER</title>
+        <style>
+            body { margin: 0; padding: 0; background-color: #000; overflow: hidden; height: 100vh; display: flex; justify-content: center; align-items: center; }
+            iframe { width: 100vw; height: 100vh; border: none; }
+        </style>
+    </head>
+    <body>
+        <iframe src="${videoUrl}" sandbox="allow-scripts allow-same-origin allow-presentation" allowfullscreen></iframe>
+    </body>
+    </html>
+    `);
+});
+
+// ---- 🛠️ 3. WEBHOOK එක SET කරන /setup ROUTE එක ----
 app.get('/setup', async (req, res) => {
     try {
         const host = req.headers.host; 
         if (host) {
             const webhookUrl = `https://${host}/bot${TELEGRAM_TOKEN}`;
             await bot.setWebHook(webhookUrl);
-            
             return res.send(`
                 <div style="text-align:center; margin-top:10%; font-family:Arial, sans-serif; background-color:#050505; color:#00ff00; padding:20px; height:100vh;">
                     <h1 style="color:#00ff00; text-shadow: 0 0 10px #00ff00;">[+] Webhook Setup Successful!</h1>
                     <div style="background:#111; border:1px solid #00ff00; padding:20px; display:inline-block; border-radius:8px; box-shadow:0 4px 15px rgba(0,255,0,0.2);">
-                        <p style="color:#fff; margin-bottom:15px;">BOT CONNECTED SUCCESSFUL.</p>
+                        <p style="color:#fff; margin-bottom:15px;">ටෙලිග්‍රෑම් එකට බොට්ව සාර්ථකව සම්බන්ධ කරා මචං.</p>
                         <code style="background:#00ff00; color:#000; padding:8px 12px; border-radius:4px; font-size:14px; display:block; word-break:break-all; font-weight:bold;">${webhookUrl}</code>
                     </div>
                     <p style="color:#fff; margin-top:20px; font-size:18px;">Now open your Telegram Bot and type /start! 🔥</p>
@@ -156,16 +110,14 @@ app.get('/setup', async (req, res) => {
             `);
         }
         res.status(400).send('Error: Host not found!');
-    } catch (error) {
-        console.error("Auto Webhook Error:", error);
-        res.status(500).send(`Webhook Setup Failed: ${error.message}`);
-    }
+    } catch (error) { res.status(500).send(`Webhook Setup Failed: ${error.message}`); }
 });
 
-// ---- 🤖 3. BOT LOGIC ----
+// ---- 🤖 4. BOT LOGIC ----
 app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
     try {
         const body = req.body;
+        const currentHost = req.headers.host; // Vercel Domain එක මෙතනින් ලබාගන්නවා
         
         if (body.message && body.message.text) {
             console.log(`👤 User: ${body.message.from.first_name} | 💬 Message: ${body.message.text}`);
@@ -210,9 +162,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                         });
                         await bot.deleteMessage(chatId, searchingMsg.message_id);
                         await bot.sendMessage(chatId, `🍿 <b>CHUCKY MOVIE ZONE</b>\n\n<i>"${movieName}" සඳහා ගැලපෙන ප්‍රතිඵල මෙන්න:</i>`, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
-                    } else {
-                        await bot.editMessageText('❌ Movie not found!', { chat_id: chatId, message_id: searchingMsg.message_id });
-                    }
+                    } else { await bot.editMessageText('❌ Movie not found!', { chat_id: chatId, message_id: searchingMsg.message_id }); }
                 } catch (err) { await bot.editMessageText('⚠️ Server Error.', { chat_id: chatId, message_id: searchingMsg.message_id }); }
             }
 
@@ -231,9 +181,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                         });
                         await bot.deleteMessage(chatId, searchingMsg.message_id);
                         await bot.sendMessage(chatId, `🍿 <b>CHUCKY MOVIE ZONE</b>\n\n<i>"${tvName}" සඳහා ගැලපෙන TV Series මෙන්න:</i>`, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
-                    } else {
-                        await bot.editMessageText('❌ TV Series not found!', { chat_id: chatId, message_id: searchingMsg.message_id });
-                    }
+                    } else { await bot.editMessageText('❌ TV Series not found!', { chat_id: chatId, message_id: searchingMsg.message_id }); }
                 } catch (err) { await bot.editMessageText('⚠️ Server Error.', { chat_id: chatId, message_id: searchingMsg.message_id }); }
             }
 
@@ -252,9 +200,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                         });
                         await bot.deleteMessage(chatId, searchingMsg.message_id);
                         await bot.sendMessage(chatId, `🍿 <b>CHUCKY MOVIE ZONE</b>\n\n<i>"${animeName}" සඳහා ගැලපෙන Anime මෙන්න:</i>`, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
-                    } else {
-                        await bot.editMessageText('❌ Anime not found!', { chat_id: chatId, message_id: searchingMsg.message_id });
-                    }
+                    } else { await bot.editMessageText('❌ Anime not found!', { chat_id: chatId, message_id: searchingMsg.message_id }); }
                 } catch (err) { await bot.editMessageText('⚠️ Server Error.', { chat_id: chatId, message_id: searchingMsg.message_id }); }
             }
 
@@ -271,12 +217,8 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                         await bot.deleteMessage(chatId, searchingMsg.message_id);
                         if (actor.profile_path) {
                             await bot.sendPhoto(chatId, `https://image.tmdb.org/t/p/w500${actor.profile_path}`, { caption: msgText, parse_mode: 'HTML' });
-                        } else {
-                            await bot.sendMessage(chatId, msgText, { parse_mode: 'HTML' });
-                        }
-                    } else {
-                        await bot.editMessageText('❌ Actor not found!', { chat_id: chatId, message_id: searchingMsg.message_id });
-                    }
+                        } else { await bot.sendMessage(chatId, msgText, { parse_mode: 'HTML' }); }
+                    } else { await bot.editMessageText('❌ Actor not found!', { chat_id: chatId, message_id: searchingMsg.message_id }); }
                 } catch (err) { await bot.editMessageText('⚠️ Server Error.', { chat_id: chatId, message_id: searchingMsg.message_id }); }
             }
 
@@ -338,16 +280,13 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 const providers = movie['watch/providers']?.results?.US?.link;
 
                 let inlineKeyboard = [];
-                if (imdbId) {
-                    inlineKeyboard.push(
-                        [{ text: "🚀 Watch Server 1", url: `https://vidsrc.to/embed/movie/${imdbId}` }],
-                        [{ text: "⚡ Watch Server 2", url: `https://embed.su/embed/movie/${imdbId}` }]
-                    );
-                } else {
-                    inlineKeyboard.push([{ text: "🚀 Stream Server", url: `https://vidsrc.to/embed/movie/${movie.id}` }]);
-                }
-                inlineKeyboard.push([{ text: "🎬 Trailer", url: trailerUrl }, { text: "📝 Sinhala Subs", url: subUrl }]);
+                // මෙන්න මම අලුතින් හදපු Ad-Free සර්වර් ලින්ක් එක දාන තැන
+                inlineKeyboard.push(
+                    [{ text: "🚀 Watch Server 1 (Ad-Free Player)", url: `https://${currentHost}/watch?type=movie&id=${imdbId || movie.id}` }],
+                    [{ text: "⚡ Watch Server 2", url: `https://embed.su/embed/movie/${imdbId || movie.id}` }]
+                );
                 
+                inlineKeyboard.push([{ text: "🎬 Trailer", url: trailerUrl }, { text: "📝 Sinhala Subs", url: subUrl }]);
                 let thirdRow = [{ text: "💡 Similar Movies", callback_data: `mov_sim:${movie.id}` }];
                 if (imdbId) thirdRow.push({ text: "⭐ IMDb", url: `https://www.imdb.com/title/${imdbId}` });
                 if (providers) thirdRow.push({ text: "📺 OTT", url: providers });
@@ -358,9 +297,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 await bot.deleteMessage(chatId, msgId);
                 if (movie.poster_path) {
                     await bot.sendPhoto(chatId, `https://image.tmdb.org/t/p/w500${movie.poster_path}`, { caption: replyMessage, parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
-                } else {
-                    await bot.sendMessage(chatId, replyMessage, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
-                }
+                } else { await bot.sendMessage(chatId, replyMessage, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } }); }
             }
 
             else if (data.startsWith('tv_det:') || data.startsWith('ani_det:')) {
@@ -380,7 +317,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 const subUrl = `https://www.google.com/search?q=${encodeURIComponent(tv.name + ' tv series sinhala subtitles')}`;
 
                 let inlineKeyboard = [
-                    [{ text: "🚀 Watch Server 1", url: `https://vidsrc.to/embed/tv/${tv.id}` }],
+                    [{ text: "🚀 Watch Server 1 (Ad-Free Player)", url: `https://${currentHost}/watch?type=tv&id=${tv.id}` }],
                     [{ text: "⚡ Watch Server 2", url: `https://embed.su/embed/tv/${tv.id}/1/1` }],
                     [{ text: "🎬 Trailer", url: trailerUrl }, { text: "📝 Sinhala Subs", url: subUrl }],
                     [{ text: "💡 Similar Shows", callback_data: `tv_sim:${tv.id}` }]
@@ -391,9 +328,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 await bot.deleteMessage(chatId, msgId);
                 if (tv.poster_path) {
                     await bot.sendPhoto(chatId, `https://image.tmdb.org/t/p/w500${tv.poster_path}`, { caption: msgText, parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
-                } else {
-                    await bot.sendMessage(chatId, msgText, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
-                }
+                } else { await bot.sendMessage(chatId, msgText, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } }); }
             }
 
             else if (data.startsWith('mov_sim:')) {
@@ -430,11 +365,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 } catch (err) { await bot.sendMessage(chatId, `⚠️ Error fetching similar shows.`); }
             }
         }
-    } catch (e) {
-        console.error("Webhook Error:", e);
-    } finally {
-        res.sendStatus(200);
-    }
+    } catch (e) { console.error("Webhook Error:", e); } finally { res.sendStatus(200); }
 });
 
 module.exports = app;
