@@ -10,12 +10,133 @@ const TMDB_API_KEY = process.env.TMDB_API_KEY;
 
 const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: false });
 
-// ---- 🌐 1. සාමාන්‍ය HOME PAGE එක ----
+// ---- 🌐 1. COOL HACKING ANIMATION HOME PAGE ----
 app.get('/', (req, res) => {
-    res.send('<h1 style="color:green; text-align:center; margin-top:20%;">CHUCKY MOVIE ZONE Pro is Alive! 🚀<br><br><span style="color:gray; font-size:18px;">Webhook එක සෙට් කරන්න /setup ලින්ක් එකට යන්න.</span></h1>');
+    res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>CHUCKY MOVIE ZONE PRO - LOADING...</title>
+        <style>
+            body {
+                background-color: #050505;
+                color: #00ff00;
+                font-family: 'Courier New', Courier, monospace;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+                overflow: hidden;
+                padding: 20px;
+                box-sizing: border-box;
+            }
+            .terminal {
+                width: 100%;
+                max-width: 750px;
+                background: rgba(0, 15, 0, 0.9);
+                border: 1px solid #00ff00;
+                box-shadow: 0 0 30px rgba(0, 255, 0, 0.2);
+                padding: 25px;
+                border-radius: 8px;
+                box-sizing: border-box;
+            }
+            .header {
+                border-bottom: 1px solid #00ff00;
+                padding-bottom: 10px;
+                margin-bottom: 20px;
+                font-weight: bold;
+                display: flex;
+                justify-content: space-between;
+                font-size: 14px;
+                letter-spacing: 1px;
+            }
+            .output {
+                min-height: 220px;
+                font-size: 15px;
+                line-height: 1.6;
+            }
+            .line {
+                visibility: hidden;
+                margin-bottom: 10px;
+                word-break: break-all;
+            }
+            .success-box {
+                margin-top: 25px;
+                border: 2px dashed #00ff00;
+                padding: 15px;
+                text-align: center;
+                display: none;
+                background: rgba(0, 40, 0, 0.3);
+            }
+            a { 
+                color: #ffffff; 
+                text-decoration: none; 
+                font-weight: bold;
+                background: #00ff00;
+                color: #000;
+                padding: 8px 15px;
+                border-radius: 4px;
+                display: inline-block;
+                margin-top: 10px;
+                transition: 0.3s;
+            }
+            a:hover {
+                background: #fff;
+                box-shadow: 0 0 15px #fff;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="terminal">
+            <div class="header">
+                <span>⚡ CHUCKY_CORE_OS_v3.0</span>
+                <span>STATUS: INJECTING...</span>
+            </div>
+            <div class="output">
+                <div class="line" id="l1">[>] Connecting to Vercel Serverless Gateway... [OK]</div>
+                <div class="line" id="l2">[>] Bypassing firewall restrictions... [BYPASSED]</div>
+                <div class="line" id="l3">[>] Loading Environment Variables securely... [TOKEN LOADED]</div>
+                <div class="line" id="l4">[>] Initializing node-telegram-bot-api framework... [DONE]</div>
+                <div class="line" id="l5">[>] Establishing secure tunnel handshake with Telegram API... [CONNECTED]</div>
+                <div class="line" id="l6" style="color: #ffffff; font-weight: bold; text-shadow: 0 0 10px #00ff00;">[+ SUCCESS] CHUCKY MOVIE ZONE PRO IS ALIVE & RUNNING! 🚀</div>
+            </div>
+            <div class="success-box" id="success">
+                <h3 style="margin: 0 0 10px 0; color: #fff; letter-spacing: 2px;">🤖 BOT SYSTEM STATUS: ACTIVE</h3>
+                <p style="margin: 5px 0 15px 0; color: #ccc; font-size: 13px;">Webhook එක සෙට් කරලා නැත්නම් පල්ලෙහා බටන් එක ඔබන්න.</p>
+                <a href="/setup">🚀 SET TELEGRAM WEBHOOK</a>
+            </div>
+        </div>
+
+        <script>
+            // එකින් එක ලයින් වැටෙන්න හදපු Script එක
+            const lines = ['l1', 'l2', 'l3', 'l4', 'l5', 'l6'];
+            let delay = 400;
+
+            lines.forEach((id, index) => {
+                setTimeout(() => {
+                    document.getElementById(id).style.visibility = 'visible';
+                    // අන්තිම ලයින් එක වැටුනට පස්සේ setup බොක්ස් එක පෙන්වන්න
+                    if (index === lines.length - 1) {
+                        setTimeout(() => {
+                            document.getElementById('success').style.display = 'block';
+                            document.title = "CHUCKY MOVIE ZONE - ONLINE";
+                        }, 800);
+                    }
+                }, delay);
+                // හැකර් ටයිපින් ඉෆෙක්ට් එකක් එන්න සෙකන්ඩ් ගාන සසම්බවී (random) කලා
+                delay += Math.floor(Math.random() * 500) + 400; 
+            });
+        </script>
+    </body>
+    </html>
+    `);
 });
 
-// ---- 🛠️ 2. WEBHOOK එක SET කරන අලුත් /setup ROUTE එක ----
+// ---- 🛠️ 2. WEBHOOK එක SET කරන /setup ROUTE එක ----
 app.get('/setup', async (req, res) => {
     try {
         const host = req.headers.host; 
@@ -24,13 +145,13 @@ app.get('/setup', async (req, res) => {
             await bot.setWebHook(webhookUrl);
             
             return res.send(`
-                <div style="text-align:center; margin-top:10%; font-family:Arial, sans-serif; background-color:#f9f9f9; padding:20px;">
-                    <h1 style="color:#2ecc71;">✅ Webhook Setup Successful!</h1>
-                    <div style="background:#fff; border:1px solid #ddd; padding:20px; display:inline-block; border-radius:8px; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
-                        <p style="color:#555; margin-bottom:15px;">ටෙලිග්‍රෑම් එකට ඔයාගේ සර්වර් එක 100%ක් සාර්ථකව සම්බන්ධ කරා.</p>
-                        <code style="background:#2c3e50; color:#fff; padding:8px 12px; border-radius:4px; font-size:14px; display:block; word-break:break-all;">${webhookUrl}</code>
+                <div style="text-align:center; margin-top:10%; font-family:Arial, sans-serif; background-color:#050505; color:#00ff00; padding:20px; height:100vh;">
+                    <h1 style="color:#00ff00; text-shadow: 0 0 10px #00ff00;">[+] Webhook Setup Successful!</h1>
+                    <div style="background:#111; border:1px solid #00ff00; padding:20px; display:inline-block; border-radius:8px; box-shadow:0 4px 15px rgba(0,255,0,0.2);">
+                        <p style="color:#fff; margin-bottom:15px;">ටෙලිග්‍රෑම් එකට බොට්ව සාර්ථකව සම්බන්ධ කරා මචං.</p>
+                        <code style="background:#00ff00; color:#000; padding:8px 12px; border-radius:4px; font-size:14px; display:block; word-break:break-all; font-weight:bold;">${webhookUrl}</code>
                     </div>
-                    <p style="color:#e74c3c; margin-top:20px; font-size:18px; font-weight:bold;">Now open your Telegram Bot and type /start to test! 🔥</p>
+                    <p style="color:#fff; margin-top:20px; font-size:18px;">Now open your Telegram Bot and type /start! 🔥</p>
                 </div>
             `);
         }
@@ -41,19 +162,17 @@ app.get('/setup', async (req, res) => {
     }
 });
 
-// ---- 🤖 3. BOT LOGIC (මැසේජ් වලට රිප්ලයි කරන කොටස) ----
+// ---- 🤖 3. BOT LOGIC ----
 app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
     try {
         const body = req.body;
         
-        // ---- 💡 LIVE MONITORING LOGS ----
         if (body.message && body.message.text) {
-            console.log(`👤 User: ${body.message.from.first_name} (@${body.message.from.username || 'NoUser'}) | 💬 Message: ${body.message.text}`);
+            console.log(`👤 User: ${body.message.from.first_name} | 💬 Message: ${body.message.text}`);
         } else if (body.callback_query) {
-            console.log(`🔘 Button Clicked by: ${body.callback_query.from.first_name} | 📊 Data: ${body.callback_query.data}`);
+            console.log(`🔘 Button: ${body.callback_query.from.first_name} | 📊 Data: ${body.callback_query.data}`);
         }
 
-        // TEXT COMMANDS
         if (body.message && body.message.text) {
             const msg = body.message;
             const chatId = msg.chat.id;
