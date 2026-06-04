@@ -29,7 +29,7 @@ async function sendMovieSearchResults(chatId, query, page = 1, messageIdToEdit =
         const searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=en-US&page=${page}`;
         const resApi = await axios.get(searchUrl);
         const totalPages = resApi.data.total_pages;
-        const results = resApi.data.results.slice(0, 5);
+        const results = resApi.data.results ? resApi.data.results.slice(0, 5) : [];
 
         if (results.length > 0) {
             let inlineKeyboard = [];
@@ -61,7 +61,7 @@ async function sendTvSearchResults(chatId, query, page = 1, messageIdToEdit = nu
         const searchUrl = `https://api.themoviedb.org/3/search/tv?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=en-US&page=${page}`;
         const resApi = await axios.get(searchUrl);
         const totalPages = resApi.data.total_pages;
-        const results = resApi.data.results.slice(0, 5);
+        const results = resApi.data.results ? resApi.data.results.slice(0, 5) : [];
 
         if (results.length > 0) {
             let inlineKeyboard = [];
@@ -241,6 +241,9 @@ app.get('/setup', async (req, res) => {
 
 // ---- 🤖 3. BOT LOGIC ----
 app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
+    // Express Route එකෙන් එන updates බොට් එන්ජිමට process කරන්න ලබාදීම
+    bot.processUpdate(req.body);
+
     try {
         const body = req.body;
 
@@ -248,17 +251,17 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
         if (body.inline_query) {
             const query = body.inline_query.query;
             const inlineQueryId = body.inline_query.id;
-            if (query.length > 2) {
+            if (query && query.length > 2) {
                 try {
                     const searchUrl = `https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=en-US`;
                     const response = await axios.get(searchUrl);
-                    const results = response.data.results.filter(item => item.media_type === 'movie' || item.media_type === 'tv').slice(0, 10);
+                    const results = response.data.results ? response.data.results.filter(item => item.media_type === 'movie' || item.media_type === 'tv').slice(0, 10) : [];
                     
                     const inlineResults = results.map(item => ({
                         type: 'article',
                         id: item.id.toString(),
-                        title: item.title || item.name,
-                        description: `⭐ ${item.vote_average.toFixed(1)} | ${item.release_date || item.first_air_date}`,
+                        title: item.title || item.name || 'Untitled',
+                        description: `⭐ ${item.vote_average ? item.vote_average.toFixed(1) : '0.0'} | ${item.release_date || item.first_air_date || 'N/A'}`,
                         thumb_url: item.poster_path ? `https://image.tmdb.org/t/p/w200${item.poster_path}` : '',
                         input_message_content: {
                             message_text: `🎬 මම <b>${item.title || item.name}</b> ෆිල්ම් එක CHUCKY MOVIE ZONE PRO එකෙන් හොයාගත්තා!\n\nබොට් ඇතුලට ගිහින් <code>/${item.media_type} ${item.title || item.name}</code> කියලා ගහලා ඔයාත් බලන්න.`,
@@ -266,7 +269,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                         }
                     }));
                     await bot.answerInlineQuery(inlineQueryId, inlineResults);
-                } catch (e) { console.error(e); }
+                } catch (e) { console.error("Inline Query Fetch Error:", e); }
             }
             return res.sendStatus(200);
         }
@@ -275,10 +278,10 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
             const msg = body.message;
             const chatId = msg.chat.id;
             const text = msg.text;
-            const userId = msg.from.id;
+            const userId = msg.from ? msg.from.id : null;
 
             // Broadcast එකට Active Users ලාව එකතු කරගැනීම
-            activeUsers.add(userId);
+            if (userId) activeUsers.add(userId);
 
             if (text.startsWith('/start') || text.startsWith('/help')) {
                 const welcomeText = `🎬 <b>Welcome to CHUCKY MOVIE ZONE!</b> 🍿\n\n` +
@@ -289,7 +292,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                                     `<b>🔥 Pro Features:</b>\n` +
                                     `📩 <code>/request [Movie Name]</code> - හොයාගන්න බැරි ෆිල්ම් එකක් Admin ගෙන් ඉල්ලන්න\n` +
                                     `🔎 <b>Inline Search:</b> ඕනෑම ගෘප් එකකට ගිහින් <code>@ඔයාගේ_බොට්ගේ_යුසර්නේම්_එක [ෆිල්ම් එකේ නම]</code> ටයිප් කරලා යාලුවන්ට ශෙයා කරන්න.\n\n` +
-                                    `⚠️ <b>වැදගත්:</b>\n<i>ඇඩ්ස් නැතුව බලන්න ලින්ක්ස් ඕපන් කරද්දී "Brave Browser" එක පාවිච්චි කරන්න!</i> 🦁`;
+                                    `⚠️ <b>වැදගත්:</b>\n<i>ඇඩ්ස් නැතුව බලන්න ලින්ක්ස් ඕපන් කරද්දී "Brave Browser" එක පාවිච්චි කරන්න! 🦁</i>`;
                 await bot.sendMessage(chatId, welcomeText, { parse_mode: 'HTML' });
             }
 
@@ -297,7 +300,9 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
             else if (text.startsWith('/request ')) {
                 const reqMovie = text.replace('/request ', '').trim();
                 if (ADMIN_CHAT_ID) {
-                    await bot.sendMessage(ADMIN_CHAT_ID, `📩 <b>New Movie Request!</b>\n\n👤 From: ${msg.from.first_name} (@${msg.from.username || 'N/A'})\n🎬 Requested: <b>${reqMovie}</b>`, { parse_mode: 'HTML' });
+                    const senderName = msg.from ? msg.from.first_name : 'User';
+                    const senderUser = msg.from && msg.from.username ? `@${msg.from.username}` : 'N/A';
+                    await bot.sendMessage(ADMIN_CHAT_ID, `📩 <b>New Movie Request!</b>\n\n👤 From: ${senderName} (${senderUser})\n🎬 Requested: <b>${reqMovie}</b>`, { parse_mode: 'HTML' });
                     await bot.sendMessage(chatId, `✅ ඔයාගේ Request එක ඇඩ්මින්ට යැව්වා! (Sent: ${reqMovie})`);
                 } else {
                     await bot.sendMessage(chatId, `⚠️ ඇඩ්මින් සෙට් කරලා නෑ.`);
@@ -306,7 +311,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
 
             // 📢 ADMIN BROADCAST FEATURE
             else if (text.startsWith('/broadcast ')) {
-                if (chatId.toString() === ADMIN_CHAT_ID) {
+                if (ADMIN_CHAT_ID && chatId.toString() === ADMIN_CHAT_ID.toString()) {
                     const bMsg = text.replace('/broadcast ', '').trim();
                     let count = 0;
                     for (let uId of activeUsers) {
@@ -339,16 +344,20 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
             const msgId = cb.message.message_id;
             const data = cb.data;
 
-            await bot.answerCallbackQuery(cb.id);
+            try { await bot.answerCallbackQuery(cb.id); } catch(e){}
 
-            // ⏭️ Pagination Button Actions
+            // ⏭️ Pagination Button Actions [FIXED JSON SPLIT LIMIT ERROR]
             if (data.startsWith('mov_p:')) {
                 const parts = data.split(':');
-                await sendMovieSearchResults(chatId, parts[2], parseInt(parts[1]), msgId);
+                const pageNum = parseInt(parts[1]);
+                const queryStr = parts.slice(2).join(':'); 
+                await sendMovieSearchResults(chatId, queryStr, pageNum, msgId);
             }
             else if (data.startsWith('tv_p:')) {
                 const parts = data.split(':');
-                await sendTvSearchResults(chatId, parts[2], parseInt(parts[1]), msgId);
+                const pageNum = parseInt(parts[1]);
+                const queryStr = parts.slice(2).join(':');
+                await sendTvSearchResults(chatId, queryStr, pageNum, msgId);
             }
 
             // ---- MOVIES DETAILED VIEW ----
@@ -360,7 +369,8 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
 
                 const releaseYear = movie.release_date ? movie.release_date.split('-')[0] : 'N/A';
                 const genres = movie.genres ? movie.genres.map(g => g.name).join(', ') : 'N/A';
-                const imdbId = movie.imdb_id || movie.id;
+                
+                const embedId = movie.imdb_id || movie.id;
                 
                 const subUrl = await getSinhalaSubLink(movie.title);
                 const ottUrl = `https://www.justwatch.com/us/search?q=${encodeURIComponent(movie.title)}`;
@@ -369,9 +379,9 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 const trailerUrl = trailerVideo ? `https://www.youtube.com/watch?v=${trailerVideo.key}` : `https://www.youtube.com/results?search_query=${encodeURIComponent(movie.title + ' official trailer')}`;
 
                 let inlineKeyboard = [
-                    [{ text: "🚀 Server 1 (VidSrc PRO)", url: `https://vidsrc.pro/embed/movie/${imdbId}` }],
-                    [{ text: "⚡ Server 2 (AutoEmbed)", url: `https://autoembed.co/movie/imdb/${imdbId}` }],
-                    [{ text: "🔥 Server 3 (VidLink)", url: `https://vidlink.pro/movie/${imdbId}` }],
+                    [{ text: "🚀 Server 1 (VidSrc PRO)", url: `https://vidsrc.pro/embed/movie/${embedId}` }],
+                    [{ text: "⚡ Server 2 (AutoEmbed)", url: `https://autoembed.co/movie/imdb/${embedId}` }],
+                    [{ text: "🔥 Server 3 (VidLink)", url: `https://vidlink.pro/movie/${embedId}` }],
                     [
                         { text: "🎬 Watch Trailer", url: trailerUrl },
                         { text: "🌐 OTT Platforms", url: ottUrl }
@@ -379,12 +389,16 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                     [{ text: "📝 Download Sinhala Subs", url: subUrl }]
                 ];
 
-                const replyMessage = `🎬 <b>${movie.title}</b> (${releaseYear})\n\n⭐ <b>Rating:</b> ${movie.vote_average.toFixed(1)}/10\n🎭 <b>Genres:</b> ${genres}\n\n📝 <b>Overview:</b> <i>${movie.overview}</i>\n\n⚠️ <b>NOTE:</b> <i>To watch without ads, open links with <b>Brave Browser</b>.</i> 🦁`;
+                const movieRating = movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A';
+                const replyMessage = `🎬 <b>${movie.title}</b> (${releaseYear})\n\n⭐ <b>Rating:</b> ${movieRating}/10\n🎭 <b>Genres:</b> ${genres}\n\n📝 <b>Overview:</b> <i>${movie.overview || 'No overview available.'}</i>\n\n⚠️ <b>NOTE:</b> <i>To watch without ads, open links with <b>Brave Browser</b>.</i> 🦁`;
 
-                await bot.deleteMessage(chatId, msgId);
+                try { await bot.deleteMessage(chatId, msgId); } catch(e){}
+                
                 if (movie.poster_path) {
                     await bot.sendPhoto(chatId, `https://image.tmdb.org/t/p/w500${movie.poster_path}`, { caption: replyMessage, parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
-                } else { await bot.sendMessage(chatId, replyMessage, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } }); }
+                } else { 
+                    await bot.sendMessage(chatId, replyMessage, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } }); 
+                }
             }
 
             // ---- TV SERIES DETAILED VIEW ----
@@ -414,15 +428,19 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                     [{ text: "📝 Download Sinhala Subs", url: subUrl }]
                 ];
 
-                const replyMessage = `📺 <b>${tv.name}</b> (${year})\n\n⭐ <b>Rating:</b> ${tv.vote_average.toFixed(1)}/10\n🎭 <b>Genres:</b> ${genres}\n\n📝 <b>Overview:</b> <i>${tv.overview}</i>\n\n⚠️ <b>NOTE:</b> <i>To watch without ads, open links with <b>Brave Browser</b>.</i> 🦁`;
+                const tvRating = tv.vote_average ? tv.vote_average.toFixed(1) : 'N/A';
+                const replyMessage = `📺 <b>${tv.name}</b> (${year})\n\n⭐ <b>Rating:</b> ${tvRating}/10\n🎭 <b>Genres:</b> ${genres}\n\n📝 <b>Overview:</b> <i>${tv.overview || 'No overview available.'}</i>\n\n⚠️ <b>NOTE:</b> <i>To watch without ads, open links with <b>Brave Browser</b>.</i> 🦁`;
                 
-                await bot.deleteMessage(chatId, msgId);
+                try { await bot.deleteMessage(chatId, msgId); } catch(e){}
+                
                 if (tv.poster_path) {
                     await bot.sendPhoto(chatId, `https://image.tmdb.org/t/p/w500${tv.poster_path}`, { caption: replyMessage, parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
-                } else { await bot.sendMessage(chatId, replyMessage, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } }); }
+                } else { 
+                    await bot.sendMessage(chatId, replyMessage, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } }); 
+                }
             }
         }
-    } catch (e) { console.error("Webhook Error:", e); } finally { res.sendStatus(200); }
+    } catch (e) { console.error("Webhook Update Error:", e); } finally { res.sendStatus(200); }
 });
 
 module.exports = app;
