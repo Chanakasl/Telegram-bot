@@ -35,28 +35,246 @@ app.get('/', (req, res) => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>CHUCKY MOVIE ZONE PRO - ONLINE</title>
         <style>
-            body { background-color: #050505; color: #00ff00; font-family: 'Courier New', Courier, monospace; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-            .terminal { width: 100%; max-width: 750px; background: rgba(0, 15, 0, 0.9); border: 1px solid #00ff00; box-shadow: 0 0 30px rgba(0, 255, 0, 0.2); padding: 25px; border-radius: 8px; }
-            .header { border-bottom: 1px solid #00ff00; padding-bottom: 10px; margin-bottom: 20px; font-weight: bold; display: flex; justify-content: space-between; }
-            .output div { margin-bottom: 8px; }
-            .success-box { margin-top: 25px; border: 2px dashed #00ff00; padding: 15px; text-align: center; background: rgba(0, 40, 0, 0.3); }
-            a { color: #000; text-decoration: none; font-weight: bold; background: #00ff00; padding: 8px 15px; border-radius: 4px; display: inline-block; margin-top: 10px; }
-            a:hover { background: #fff; box-shadow: 0 0 15px #fff; }
+            /* ── Reset & base ── */
+            *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+            body {
+                background-color: #050505;
+                color: #00ff00;
+                font-family: 'Courier New', Courier, monospace;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                padding: 20px;
+                overflow-x: hidden;
+                position: relative;
+            }
+
+            /* ── CRT scanline overlay ── */
+            body::before {
+                content: '';
+                position: fixed;
+                inset: 0;
+                pointer-events: none;
+                z-index: 999;
+                background: repeating-linear-gradient(
+                    to bottom,
+                    transparent 0px,
+                    transparent 3px,
+                    rgba(0, 0, 0, 0.18) 3px,
+                    rgba(0, 0, 0, 0.18) 4px
+                );
+            }
+
+            /* ── Subtle screen flicker ── */
+            body::after {
+                content: '';
+                position: fixed;
+                inset: 0;
+                pointer-events: none;
+                z-index: 998;
+                background: rgba(0, 255, 0, 0.015);
+                animation: flicker 8s infinite;
+            }
+
+            @keyframes flicker {
+                0%,  19%,  21%,  23%,  25%,  54%,  56%,  100% { opacity: 1; }
+                20%,  22%,  24%,  55% { opacity: 0.85; }
+            }
+
+            /* ── Terminal card ── */
+            .terminal {
+                width: 100%;
+                max-width: 750px;
+                background: rgba(0, 15, 0, 0.92);
+                border: 1px solid #00ff00;
+                box-shadow:
+                    0 0 18px rgba(0, 255, 0, 0.25),
+                    0 0 60px rgba(0, 255, 0, 0.08),
+                    inset 0 0 30px rgba(0, 255, 0, 0.03);
+                padding: 25px;
+                border-radius: 8px;
+                position: relative;
+                animation: terminalBoot 0.4s ease-out;
+            }
+
+            @keyframes terminalBoot {
+                from { opacity: 0; transform: scaleY(0.96); }
+                to   { opacity: 1; transform: scaleY(1); }
+            }
+
+            /* ── Header ── */
+            .header {
+                border-bottom: 1px solid #00ff00;
+                padding-bottom: 10px;
+                margin-bottom: 20px;
+                font-weight: bold;
+                display: flex;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            .header span:last-child {
+                animation: statusPulse 2.5s ease-in-out infinite;
+            }
+
+            @keyframes statusPulse {
+                0%, 100% { color: #00ff00; text-shadow: 0 0 6px #00ff00; }
+                50%       { color: #00cc00; text-shadow: 0 0 14px #00ff00, 0 0 28px rgba(0,255,0,0.4); }
+            }
+
+            /* ── Log output lines (typing animation) ── */
+            .output { overflow: hidden; }
+
+            .output .line {
+                margin-bottom: 8px;
+                overflow: hidden;
+                white-space: nowrap;
+                opacity: 0;
+                animation: typeLine 0.05s steps(1, end) forwards;
+            }
+
+            /* Each character "types" in via width expand */
+            .output .line span {
+                display: inline-block;
+                overflow: hidden;
+                white-space: nowrap;
+                width: 0;
+                animation: typeChars var(--dur, 0.7s) steps(var(--steps, 50), end) forwards;
+                animation-delay: var(--delay, 0s);
+            }
+
+            /* Line fade-in trigger */
+            .output .line { animation: none; opacity: 1; }
+
+            .output .line span {
+                width: 0;
+                max-width: 100%;
+            }
+
+            @keyframes typeChars {
+                from { width: 0; }
+                to   { width: 100%; }
+            }
+
+            /* Blinking cursor on the last line */
+            .output .line:last-child span::after {
+                content: '█';
+                animation: blink 0.9s step-end infinite;
+                margin-left: 1px;
+                font-size: 0.9em;
+            }
+
+            @keyframes blink {
+                0%, 100% { opacity: 1; }
+                50%       { opacity: 0; }
+            }
+
+            /* ── [+ SUCCESS] neon glow ── */
+            .success-line {
+                color: #ffffff !important;
+                font-weight: bold;
+                margin-top: 10px;
+                text-shadow:
+                    0 0 6px  #00ff00,
+                    0 0 14px #00ff00,
+                    0 0 30px rgba(0,255,0,0.6);
+                animation: successGlow 2s ease-in-out infinite alternate;
+            }
+
+            @keyframes successGlow {
+                from {
+                    text-shadow: 0 0 6px #00ff00, 0 0 14px #00ff00, 0 0 30px rgba(0,255,0,0.5);
+                }
+                to {
+                    text-shadow: 0 0 10px #00ff00, 0 0 26px #00ff00, 0 0 55px rgba(0,255,0,0.8), 0 0 80px rgba(0,255,0,0.3);
+                }
+            }
+
+            /* ── Success box ── */
+            .success-box {
+                margin-top: 25px;
+                border: 2px dashed #00ff00;
+                padding: 15px;
+                text-align: center;
+                background: rgba(0, 40, 0, 0.3);
+                box-shadow: inset 0 0 20px rgba(0,255,0,0.05);
+            }
+
+            /* ── Webhook button ── */
+            a.btn {
+                color: #000;
+                text-decoration: none;
+                font-weight: bold;
+                background: #00ff00;
+                padding: 10px 20px;
+                border-radius: 4px;
+                display: inline-block;
+                margin-top: 10px;
+                font-family: 'Courier New', Courier, monospace;
+                font-size: 15px;
+                letter-spacing: 0.04em;
+                transition:
+                    background   0.25s ease,
+                    color        0.25s ease,
+                    box-shadow   0.25s ease,
+                    transform    0.15s ease;
+                box-shadow:
+                    0 0 10px rgba(0,255,0,0.5),
+                    0 0 22px rgba(0,255,0,0.2);
+            }
+
+            a.btn:hover {
+                background: #ffffff;
+                color: #000;
+                transform: translateY(-2px) scale(1.03);
+                box-shadow:
+                    0 0 18px rgba(255,255,255,0.9),
+                    0 0 40px rgba(0,255,0,0.6),
+                    0 0 70px rgba(0,255,0,0.3);
+            }
+
+            a.btn:active {
+                transform: translateY(0) scale(0.98);
+                box-shadow: 0 0 8px rgba(0,255,0,0.4);
+            }
+
+            /* ── Mobile ── */
+            @media (max-width: 480px) {
+                .terminal { padding: 18px 14px; }
+                .header { font-size: 13px; }
+                .output .line span { font-size: 12px; }
+                a.btn { font-size: 13px; padding: 9px 16px; }
+            }
         </style>
     </head>
     <body>
         <div class="terminal">
-            <div class="header"><span>⚡ CHUCKY_CORE_OS_v3.0</span><span>STATUS: ONLINE</span></div>
+            <div class="header">
+                <span>⚡ CHUCKY_CORE_OS_v3.0</span>
+                <span>STATUS: ONLINE</span>
+            </div>
             <div class="output">
-                <div>[>] Connecting to Vercel Serverless Gateway... [OK]</div>
-                <div>[>] Integrating Automated WordPress API Tunnel... [SUCCESS]</div>
-                <div>[>] Establishing secure tunnel handshake with Telegram API... [CONNECTED]</div>
-                <div style="color: #ffffff; font-weight: bold; text-shadow: 0 0 10px #00ff00; margin-top:10px;">[+ SUCCESS] CHUCKY MOVIE ZONE IS FIXED & DEPLOYED! 🚀</div>
+                <div class="line">
+                    <span style="--dur:1.1s; --steps:52; --delay:0.2s">[&gt;] Connecting to Vercel Serverless Gateway... [OK]</span>
+                </div>
+                <div class="line">
+                    <span style="--dur:1.4s; --steps:64; --delay:1.5s">[&gt;] Integrating Automated WordPress API Tunnel... [SUCCESS]</span>
+                </div>
+                <div class="line">
+                    <span style="--dur:1.5s; --steps:70; --delay:3.1s">[&gt;] Establishing secure tunnel handshake with Telegram API... [CONNECTED]</span>
+                </div>
+                <div class="line success-line">
+                    <span style="--dur:1.2s; --steps:55; --delay:4.8s">[+ SUCCESS] CHUCKY MOVIE ZONE IS FIXED &amp; DEPLOYED! 🚀</span>
+                </div>
             </div>
             <div class="success-box">
                 <h3 style="margin: 0 0 10px 0; color: #fff;">🤖 BOT SYSTEM STATUS: ACTIVE</h3>
                 <p style="margin: 5px 0 15px 0; color: #ccc; font-size: 13px;">බොට් වැඩ කරන්නේ නැත්නම් පහල බටන් එක ඔබන්න.</p>
-                <a href="/setup">🚀 SET TELEGRAM WEBHOOK</a>
+                <a href="/setup" class="btn">🚀 SET TELEGRAM WEBHOOK</a>
             </div>
         </div>
     </body>
