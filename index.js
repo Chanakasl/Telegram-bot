@@ -69,12 +69,11 @@ app.get('/setup', async (req, res) => {
     }
 });
 
-// ---- 🤖 3. BOT LOGIC (COMMANDS & CALLBACKS) ----
+// ---- 🤖 3. BOT LOGIC ----
 app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
     try {
         const body = req.body;
 
-        // Handle text messages
         if (body.message && body.message.text) {
             const msg = body.message;
             const chatId = msg.chat.id;
@@ -130,7 +129,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
             }
         }
 
-        // Handle inline button clicks
+        // CALLBACK QUERIES (BUTTON CLICKS)
         else if (body.callback_query) {
             const cb = body.callback_query;
             const chatId = cb.message.chat.id;
@@ -139,9 +138,11 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
 
             await bot.answerCallbackQuery(cb.id);
 
+            // ---- MOVIES BUTTON ACTIONS ----
             if (data.startsWith('mov_det:')) {
                 const tmdbId = data.split(':')[1];
-                const detailUrl = `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${TMDB_API_KEY}&language=en-US`;
+                // මෙතන append_to_response=videos දාලා තියෙනවා ට්‍රේලර් එක ගන්න
+                const detailUrl = `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${TMDB_API_KEY}&language=en-US&append_to_response=videos`;
                 const resApi = await axios.get(detailUrl);
                 const movie = resApi.data;
 
@@ -149,12 +150,23 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 const genres = movie.genres ? movie.genres.map(g => g.name).join(', ') : 'N/A';
                 const imdbId = movie.imdb_id || movie.id;
                 
+                // Links Generator
                 const subUrl = `https://www.google.com/search?q=${encodeURIComponent(movie.title + ' sinhala subtitles baiscope zoom.lk')}`;
+                const ottUrl = `https://www.justwatch.com/us/search?q=${encodeURIComponent(movie.title)}`;
+                
+                // Get YouTube Trailer Key
+                const trailerVideo = movie.videos?.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
+                const trailerUrl = trailerVideo ? `https://www.youtube.com/watch?v=${trailerVideo.key}` : `https://www.youtube.com/results?search_query=${encodeURIComponent(movie.title + ' official trailer')}`;
 
+                // All buttons inside the inline keyboard layout
                 let inlineKeyboard = [
                     [{ text: "🚀 Server 1 (VidSrc PRO)", url: `https://vidsrc.pro/embed/movie/${imdbId}` }],
                     [{ text: "⚡ Server 2 (AutoEmbed)", url: `https://autoembed.co/movie/imdb/${imdbId}` }],
                     [{ text: "🔥 Server 3 (VidLink)", url: `https://vidlink.pro/movie/${imdbId}` }],
+                    [
+                        { text: "🎬 Watch Trailer", url: trailerUrl },
+                        { text: "🌐 OTT Platforms", url: ottUrl }
+                    ],
                     [{ text: "📝 Download Sinhala Subs", url: subUrl }]
                 ];
 
@@ -166,20 +178,32 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 } else { await bot.sendMessage(chatId, replyMessage, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } }); }
             }
 
+            // ---- TV SERIES BUTTON ACTIONS ----
             else if (data.startsWith('tv_det:')) {
                 const tvId = data.split(':')[1];
-                const detailUrl = `https://api.themoviedb.org/3/tv/${tvId}?api_key=${TMDB_API_KEY}&language=en-US`;
+                const detailUrl = `https://api.themoviedb.org/3/tv/${tvId}?api_key=${TMDB_API_KEY}&language=en-US&append_to_response=videos`;
                 const resApi = await axios.get(detailUrl);
                 const tv = resApi.data;
                 
                 const year = tv.first_air_date ? tv.first_air_date.split('-')[0] : 'N/A';
                 const genres = tv.genres ? tv.genres.map(g => g.name).join(', ') : 'N/A';
+                
+                // Links Generator
                 const subUrl = `https://www.google.com/search?q=${encodeURIComponent(tv.name + ' tv series sinhala subtitles')}`;
+                const ottUrl = `https://www.justwatch.com/us/search?q=${encodeURIComponent(tv.name)}`;
+                
+                // Get YouTube Trailer Key
+                const trailerVideo = tv.videos?.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
+                const trailerUrl = trailerVideo ? `https://www.youtube.com/watch?v=${trailerVideo.key}` : `https://www.youtube.com/results?search_query=${encodeURIComponent(tv.name + ' official trailer')}`;
 
                 let inlineKeyboard = [
                     [{ text: "🚀 Server 1 (VidSrc PRO)", url: `https://vidsrc.pro/embed/tv/${tv.id}` }],
                     [{ text: "⚡ Server 2 (AutoEmbed)", url: `https://autoembed.co/tv/tmdb/${tv.id}-1-1` }],
                     [{ text: "🔥 Server 3 (VidLink)", url: `https://vidlink.pro/tv/${tv.id}/1/1` }],
+                    [
+                        { text: "🎬 Watch Trailer", url: trailerUrl },
+                        { text: "🌐 OTT Platforms", url: ottUrl }
+                    ],
                     [{ text: "📝 Download Sinhala Subs", url: subUrl }]
                 ];
 
