@@ -148,10 +148,11 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 
                 const subUrl = `https://www.google.com/search?q=${encodeURIComponent(movie.title + ' sinhala subtitles baiscope zoom.lk')}`;
 
+                // අලුත්ම වැඩ කරන සර්වර්ස් 3ක් මෙතන දාලා තියෙනවා
                 let inlineKeyboard = [
                     [{ text: "🚀 Server 1 (VidSrc PRO)", url: `https://vidsrc.pro/embed/movie/${imdbId}` }],
                     [{ text: "⚡ Server 2 (AutoEmbed)", url: `https://autoembed.co/movie/imdb/${imdbId}` }],
-                    [{ text: "🔥 Server 3 (Embed.su)", url: `https://embed.su/embed/movie/${imdbId}` }],
+                    [{ text: "🔥 Server 3 (VidLink)", url: `https://vidlink.pro/movie/${imdbId}` }],
                     [{ text: "📝 Download Sinhala Subs", url: subUrl }]
                 ];
 
@@ -173,10 +174,11 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 const genres = tv.genres ? tv.genres.map(g => g.name).join(', ') : 'N/A';
                 const subUrl = `https://www.google.com/search?q=${encodeURIComponent(tv.name + ' tv series sinhala subtitles')}`;
 
+                // අලුත්ම වැඩ කරන සර්වර්ස් 3ක් මෙතන දාලා තියෙනවා
                 let inlineKeyboard = [
                     [{ text: "🚀 Server 1 (VidSrc PRO)", url: `https://vidsrc.pro/embed/tv/${tv.id}` }],
                     [{ text: "⚡ Server 2 (AutoEmbed)", url: `https://autoembed.co/tv/tmdb/${tv.id}-1-1` }],
-                    [{ text: "🔥 Server 3 (Embed.su)", url: `https://embed.su/embed/tv/${tv.id}/1/1` }],
+                    [{ text: "🔥 Server 3 (VidLink)", url: `https://vidlink.pro/tv/${tv.id}/1/1` }],
                     [{ text: "📝 Download Sinhala Subs", url: subUrl }]
                 ];
 
