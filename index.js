@@ -10,7 +10,7 @@ const TMDB_API_KEY = process.env.TMDB_API_KEY;
 
 const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: false });
 
-// ---- 🌐 1. COOL HACKING ANIMATION HOME PAGE ----
+// ---- 🌐 1. HOME PAGE (HACKING ANIMATION) ----
 app.get('/', (req, res) => {
     res.send(`
     <!DOCTYPE html>
@@ -20,12 +20,12 @@ app.get('/', (req, res) => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>CHUCKY MOVIE ZONE PRO - ONLINE</title>
         <style>
-            body { background-color: #050505; color: #00ff00; font-family: 'Courier New', Courier, monospace; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; padding: 20px; box-sizing: border-box; }
-            .terminal { width: 100%; max-width: 750px; background: rgba(0, 15, 0, 0.9); border: 1px solid #00ff00; box-shadow: 0 0 30px rgba(0, 255, 0, 0.2); padding: 25px; border-radius: 8px; box-sizing: border-box; }
-            .header { border-bottom: 1px solid #00ff00; padding-bottom: 10px; margin-bottom: 20px; font-weight: bold; display: flex; justify-content: space-between; font-size: 14px; letter-spacing: 1px; }
-            .output { min-height: 220px; font-size: 15px; line-height: 1.6; }
+            body { background-color: #050505; color: #00ff00; font-family: 'Courier New', Courier, monospace; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+            .terminal { width: 100%; max-width: 750px; background: rgba(0, 15, 0, 0.9); border: 1px solid #00ff00; box-shadow: 0 0 30px rgba(0, 255, 0, 0.2); padding: 25px; border-radius: 8px; }
+            .header { border-bottom: 1px solid #00ff00; padding-bottom: 10px; margin-bottom: 20px; font-weight: bold; display: flex; justify-content: space-between; }
+            .output div { margin-bottom: 8px; }
             .success-box { margin-top: 25px; border: 2px dashed #00ff00; padding: 15px; text-align: center; background: rgba(0, 40, 0, 0.3); }
-            a { color: #000; text-decoration: none; font-weight: bold; background: #00ff00; padding: 8px 15px; border-radius: 4px; display: inline-block; margin-top: 10px; transition: 0.3s; }
+            a { color: #000; text-decoration: none; font-weight: bold; background: #00ff00; padding: 8px 15px; border-radius: 4px; display: inline-block; margin-top: 10px; }
             a:hover { background: #fff; box-shadow: 0 0 15px #fff; }
         </style>
     </head>
@@ -34,14 +34,13 @@ app.get('/', (req, res) => {
             <div class="header"><span>⚡ CHUCKY_CORE_OS_v3.0</span><span>STATUS: ONLINE</span></div>
             <div class="output">
                 <div>[>] Connecting to Vercel Serverless Gateway... [OK]</div>
-                <div>[>] Bypassing firewall restrictions... [BYPASSED]</div>
                 <div>[>] Loading Environment Variables securely... [TOKEN LOADED]</div>
                 <div>[>] Establishing secure tunnel handshake with Telegram API... [CONNECTED]</div>
                 <div style="color: #ffffff; font-weight: bold; text-shadow: 0 0 10px #00ff00; margin-top:10px;">[+ SUCCESS] CHUCKY MOVIE ZONE PRO IS ALIVE & RUNNING! 🚀</div>
             </div>
             <div class="success-box">
-                <h3 style="margin: 0 0 10px 0; color: #fff; letter-spacing: 2px;">🤖 BOT SYSTEM STATUS: ACTIVE</h3>
-                <p style="margin: 5px 0 15px 0; color: #ccc; font-size: 13px;">Webhook එක සෙට් කරලා නැත්නම් පල්ලෙහා බටන් එක ඔබන්න.</p>
+                <h3 style="margin: 0 0 10px 0; color: #fff;">🤖 BOT SYSTEM STATUS: ACTIVE</h3>
+                <p style="margin: 5px 0 15px 0; color: #ccc; font-size: 13px;">බොට් වැඩ කරන්නේ නැත්නම් පහල බටන් එක ඔබන්න.</p>
                 <a href="/setup">🚀 SET TELEGRAM WEBHOOK</a>
             </div>
         </div>
@@ -50,28 +49,32 @@ app.get('/', (req, res) => {
     `);
 });
 
-// ---- 🛠️ 2. WEBHOOK එක SET කරන /setup ROUTE එක ----
+// ---- 🛠️ 2. WEBHOOK SETUP ROUTE ----
 app.get('/setup', async (req, res) => {
     try {
         const host = req.headers.host; 
         if (host) {
             const webhookUrl = `https://${host}/bot${TELEGRAM_TOKEN}`;
             await bot.setWebHook(webhookUrl);
-            return res.send(`<h1 style="color:green; text-align:center; margin-top:20%;">✅ Webhook Setup Successful! Go to Telegram and type /start</h1>`);
+            return res.send(`
+                <div style="background-color: #050505; color: #00ff00; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: sans-serif;">
+                    <h1>✅ Webhook Setup Successful!</h1>
+                    <p>දැන් ටෙලිග්‍රෑම් එකට ගිහින් බොට්ට /start කියලා යවන්න.</p>
+                </div>
+            `);
         }
         res.status(400).send('Error: Host not found!');
-    } catch (error) { res.status(500).send(`Webhook Setup Failed: ${error.message}`); }
+    } catch (error) { 
+        res.status(500).send(`Webhook Setup Failed: ${error.message}`); 
+    }
 });
 
-// ---- 🤖 3. BOT LOGIC ----
+// ---- 🤖 3. BOT LOGIC (COMMANDS & CALLBACKS) ----
 app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
     try {
         const body = req.body;
-        
-        if (body.message && body.message.text) {
-            console.log(`👤 User: ${body.message.from.first_name} | 💬 Message: ${body.message.text}`);
-        }
 
+        // Handle text messages
         if (body.message && body.message.text) {
             const msg = body.message;
             const chatId = msg.chat.id;
@@ -127,7 +130,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
             }
         }
 
-        // CALLBACK QUERIES
+        // Handle inline button clicks
         else if (body.callback_query) {
             const cb = body.callback_query;
             const chatId = cb.message.chat.id;
@@ -138,7 +141,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
 
             if (data.startsWith('mov_det:')) {
                 const tmdbId = data.split(':')[1];
-                const detailUrl = `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${TMDB_API_KEY}&language=en-US&append_to_response=videos,credits`;
+                const detailUrl = `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${TMDB_API_KEY}&language=en-US`;
                 const resApi = await axios.get(detailUrl);
                 const movie = resApi.data;
 
@@ -148,7 +151,6 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 
                 const subUrl = `https://www.google.com/search?q=${encodeURIComponent(movie.title + ' sinhala subtitles baiscope zoom.lk')}`;
 
-                // අලුත්ම වැඩ කරන සර්වර්ස් 3ක් මෙතන දාලා තියෙනවා
                 let inlineKeyboard = [
                     [{ text: "🚀 Server 1 (VidSrc PRO)", url: `https://vidsrc.pro/embed/movie/${imdbId}` }],
                     [{ text: "⚡ Server 2 (AutoEmbed)", url: `https://autoembed.co/movie/imdb/${imdbId}` }],
@@ -166,7 +168,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
 
             else if (data.startsWith('tv_det:')) {
                 const tvId = data.split(':')[1];
-                const detailUrl = `https://api.themoviedb.org/3/tv/${tvId}?api_key=${TMDB_API_KEY}&language=en-US&append_to_response=videos,credits`;
+                const detailUrl = `https://api.themoviedb.org/3/tv/${tvId}?api_key=${TMDB_API_KEY}&language=en-US`;
                 const resApi = await axios.get(detailUrl);
                 const tv = resApi.data;
                 
@@ -174,7 +176,6 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 const genres = tv.genres ? tv.genres.map(g => g.name).join(', ') : 'N/A';
                 const subUrl = `https://www.google.com/search?q=${encodeURIComponent(tv.name + ' tv series sinhala subtitles')}`;
 
-                // අලුත්ම වැඩ කරන සර්වර්ස් 3ක් මෙතන දාලා තියෙනවා
                 let inlineKeyboard = [
                     [{ text: "🚀 Server 1 (VidSrc PRO)", url: `https://vidsrc.pro/embed/tv/${tv.id}` }],
                     [{ text: "⚡ Server 2 (AutoEmbed)", url: `https://autoembed.co/tv/tmdb/${tv.id}-1-1` }],
@@ -190,7 +191,11 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 } else { await bot.sendMessage(chatId, replyMessage, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } }); }
             }
         }
-    } catch (e) { console.error("Webhook Error:", e); } finally { res.sendStatus(200); }
+    } catch (e) { 
+        console.error("Webhook Error:", e); 
+    } finally { 
+        res.sendStatus(200); 
+    }
 });
 
 module.exports = app;
