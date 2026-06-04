@@ -10,6 +10,21 @@ const TMDB_API_KEY = process.env.TMDB_API_KEY;
 
 const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: false });
 
+// 🔍 SINHALASUB API එකෙන් EXACT LINK එක හොයන FUNCTION එක
+async function getSinhalaSubLink(title) {
+    try {
+        // Sinhalasub API එකට රහසින්ම පින් එකක් ගසා බැලීම
+        const response = await axios.get(`https://sinhalasub.lk/wp-json/wp/v2/posts?search=${encodeURIComponent(title)}&per_page=1`, { timeout: 3500 });
+        if (response.data && response.data.length > 0) {
+            return response.data[0].link; // ෆිල්ම් එක තිබ්බොත් කෙලින්ම පෝස්ට් එකේ ලින්ක් එක දෙනවා
+        }
+    } catch (err) {
+        console.error("Sinhalasub API Error or Timeout, switching to fallback.");
+    }
+    // සයිට් එකේ නැත්නම් හෝ API එක වැඩ නැත්නම් Search ලින්ක් එක සෙට් කරනවා
+    return `https://sinhalasub.lk/?s=${encodeURIComponent(title)}`;
+}
+
 // ---- 🌐 1. HOME PAGE (HACKING ANIMATION) ----
 app.get('/', (req, res) => {
     res.send(`
@@ -34,9 +49,9 @@ app.get('/', (req, res) => {
             <div class="header"><span>⚡ CHUCKY_CORE_OS_v3.0</span><span>STATUS: ONLINE</span></div>
             <div class="output">
                 <div>[>] Connecting to Vercel Serverless Gateway... [OK]</div>
-                <div>[>] Loading Environment Variables securely... [TOKEN LOADED]</div>
+                <div>[>] Integrating Automated WordPress API Tunnel... [SUCCESS]</div>
                 <div>[>] Establishing secure tunnel handshake with Telegram API... [CONNECTED]</div>
-                <div style="color: #ffffff; font-weight: bold; text-shadow: 0 0 10px #00ff00; margin-top:10px;">[+ SUCCESS] CHUCKY MOVIE ZONE PRO IS ALIVE & RUNNING! 🚀</div>
+                <div style="color: #ffffff; font-weight: bold; text-shadow: 0 0 10px #00ff00; margin-top:10px;">[+ SUCCESS] CHUCKY MOVIE ZONE IS FIXED & DEPLOYED! 🚀</div>
             </div>
             <div class="success-box">
                 <h3 style="margin: 0 0 10px 0; color: #fff;">🤖 BOT SYSTEM STATUS: ACTIVE</h3>
@@ -56,17 +71,10 @@ app.get('/setup', async (req, res) => {
         if (host) {
             const webhookUrl = `https://${host}/bot${TELEGRAM_TOKEN}`;
             await bot.setWebHook(webhookUrl);
-            return res.send(`
-                <div style="background-color: #050505; color: #00ff00; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: sans-serif;">
-                    <h1>✅ Webhook Setup Successful!</h1>
-                    <p>දැන් ටෙලිග්‍රෑම් එකට ගිහින් බොට්ට /start කියලා යවන්න.</p>
-                </div>
-            `);
+            return res.send(`<h1 style="color:green;text-align:center;margin-top:20%;">✅ Webhook Setup Successful!</h1>`);
         }
         res.status(400).send('Error: Host not found!');
-    } catch (error) { 
-        res.status(500).send(`Webhook Setup Failed: ${error.message}`); 
-    }
+    } catch (error) { res.status(500).send(`Webhook Setup Failed: ${error.message}`); }
 });
 
 // ---- 🤖 3. BOT LOGIC ----
@@ -83,10 +91,9 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 const welcomeText = `🎬 <b>Welcome to CHUCKY MOVIE ZONE!</b> 🍿\n\n` +
                                     `ලෝකේ තියෙන ඕනෑම Movie, TV Series හෝ Anime එකක් ලේසියෙන්ම සොයාගන්න!\n\n` +
                                     `<b>📌 Main Commands:</b>\n` +
-                                    `🎥 <code>/movie [name]</code> - Search a Movie\n` +
-                                    `📺 <code>/tv [name]</code> - Search a TV Series\n` +
-                                    `⛩️ <code>/anime [name]</code> - Search Anime\n\n` +
-                                    `⚠️ <b>වැදගත්:</b>\n<i>ඇඩ්ස් (Ads) කරදරයක් නැතුව ෆිල්ම් බලන්න ලින්ක්ස් ඕපන් කරන්න "Brave Browser" එක පාවිච්චි කරන්න!</i> 🦁`;
+                                    `🎥 <code>/movie [name]</code>\n` +
+                                    `📺 <code>/tv [name]</code>\n\n` +
+                                    `⚠️ <b>වැදගත්:</b>\n<i>ඇඩ්ස් නැතුව බලන්න ලින්ක්ස් ඕපන් කරද්දී "Brave Browser" එක පාවිච්චි කරන්න!</i> 🦁`;
                 await bot.sendMessage(chatId, welcomeText, { parse_mode: 'HTML' });
             }
 
@@ -104,7 +111,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                             inlineKeyboard.push([{ text: `🎬 ${movie.title} (${year})`, callback_data: `mov_det:${movie.id}` }]);
                         });
                         await bot.deleteMessage(chatId, searchingMsg.message_id);
-                        await bot.sendMessage(chatId, `🍿 <b>CHUCKY MOVIE ZONE</b>\n\n<i>"${movieName}" සඳහා ගැලපෙන ප්‍රතිඵල මෙන්න:</i>`, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
+                        await bot.sendMessage(chatId, `🍿 <b>CHUCKY MOVIE ZONE</b>\n\n<i>ප්‍රතිඵල මෙන්න:</i>`, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
                     } else { await bot.editMessageText('❌ Movie not found!', { chat_id: chatId, message_id: searchingMsg.message_id }); }
                 } catch (err) { await bot.editMessageText('⚠️ Server Error.', { chat_id: chatId, message_id: searchingMsg.message_id }); }
             }
@@ -123,13 +130,13 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                             inlineKeyboard.push([{ text: `📺 ${tv.name} (${year})`, callback_data: `tv_det:${tv.id}` }]);
                         });
                         await bot.deleteMessage(chatId, searchingMsg.message_id);
-                        await bot.sendMessage(chatId, `🍿 <b>CHUCKY MOVIE ZONE</b>\n\n<i>"${tvName}" සඳහා ගැලපෙන TV Series මෙන්න:</i>`, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
+                        await bot.sendMessage(chatId, `🍿 <b>CHUCKY MOVIE ZONE</b>\n\n<i>ප්‍රතිඵල මෙන්න:</i>`, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
                     } else { await bot.editMessageText('❌ TV Series not found!', { chat_id: chatId, message_id: searchingMsg.message_id }); }
                 } catch (err) { await bot.editMessageText('⚠️ Server Error.', { chat_id: chatId, message_id: searchingMsg.message_id }); }
             }
         }
 
-        // CALLBACK QUERIES (BUTTON CLICKS)
+        // CALLBACK QUERIES
         else if (body.callback_query) {
             const cb = body.callback_query;
             const chatId = cb.message.chat.id;
@@ -138,10 +145,9 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
 
             await bot.answerCallbackQuery(cb.id);
 
-            // ---- MOVIES BUTTON ACTIONS ----
+            // ---- MOVIES ----
             if (data.startsWith('mov_det:')) {
                 const tmdbId = data.split(':')[1];
-                // මෙතන append_to_response=videos දාලා තියෙනවා ට්‍රේලර් එක ගන්න
                 const detailUrl = `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${TMDB_API_KEY}&language=en-US&append_to_response=videos`;
                 const resApi = await axios.get(detailUrl);
                 const movie = resApi.data;
@@ -150,15 +156,13 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 const genres = movie.genres ? movie.genres.map(g => g.name).join(', ') : 'N/A';
                 const imdbId = movie.imdb_id || movie.id;
                 
-                // Links Generator
-                const subUrl = `https://www.google.com/search?q=${encodeURIComponent(movie.title + ' sinhala subtitles baiscope zoom.lk')}`;
+                // 🚀 මෙතනදී සින්හලසබ් ලින්ක් එක Automated ක්‍රමයට API එකෙන් ගන්නවා
+                const subUrl = await getSinhalaSubLink(movie.title);
                 const ottUrl = `https://www.justwatch.com/us/search?q=${encodeURIComponent(movie.title)}`;
                 
-                // Get YouTube Trailer Key
                 const trailerVideo = movie.videos?.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
                 const trailerUrl = trailerVideo ? `https://www.youtube.com/watch?v=${trailerVideo.key}` : `https://www.youtube.com/results?search_query=${encodeURIComponent(movie.title + ' official trailer')}`;
 
-                // All buttons inside the inline keyboard layout
                 let inlineKeyboard = [
                     [{ text: "🚀 Server 1 (VidSrc PRO)", url: `https://vidsrc.pro/embed/movie/${imdbId}` }],
                     [{ text: "⚡ Server 2 (AutoEmbed)", url: `https://autoembed.co/movie/imdb/${imdbId}` }],
@@ -170,7 +174,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                     [{ text: "📝 Download Sinhala Subs", url: subUrl }]
                 ];
 
-                const replyMessage = `🎬 <b>${movie.title}</b> (${releaseYear})\n\n⭐ <b>Rating:</b> ${movie.vote_average.toFixed(1)}/10\n🎭 <b>Genres:</b> ${genres}\n\n📝 <b>Overview:</b> <i>${movie.overview}</i>\n\n⚠️ <b>NOTE:</b> <i>To watch without annoying ads, please open the server links using <b>Brave Browser</b>.</i> 🦁`;
+                const replyMessage = `🎬 <b>${movie.title}</b> (${releaseYear})\n\n⭐ <b>Rating:</b> ${movie.vote_average.toFixed(1)}/10\n🎭 <b>Genres:</b> ${genres}\n\n📝 <b>Overview:</b> <i>${movie.overview}</i>\n\n⚠️ <b>NOTE:</b> <i>To watch without annoying ads, open links with <b>Brave Browser</b>.</i> 🦁`;
 
                 await bot.deleteMessage(chatId, msgId);
                 if (movie.poster_path) {
@@ -178,7 +182,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 } else { await bot.sendMessage(chatId, replyMessage, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } }); }
             }
 
-            // ---- TV SERIES BUTTON ACTIONS ----
+            // ---- TV SERIES ----
             else if (data.startsWith('tv_det:')) {
                 const tvId = data.split(':')[1];
                 const detailUrl = `https://api.themoviedb.org/3/tv/${tvId}?api_key=${TMDB_API_KEY}&language=en-US&append_to_response=videos`;
@@ -188,11 +192,10 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 const year = tv.first_air_date ? tv.first_air_date.split('-')[0] : 'N/A';
                 const genres = tv.genres ? tv.genres.map(g => g.name).join(', ') : 'N/A';
                 
-                // Links Generator
-                const subUrl = `https://www.google.com/search?q=${encodeURIComponent(tv.name + ' tv series sinhala subtitles')}`;
+                // 🚀 TV Series සඳහාත් API එකෙන් Exact ලින්ක් එක සෙට් කිරීම
+                const subUrl = await getSinhalaSubLink(tv.name);
                 const ottUrl = `https://www.justwatch.com/us/search?q=${encodeURIComponent(tv.name)}`;
                 
-                // Get YouTube Trailer Key
                 const trailerVideo = tv.videos?.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
                 const trailerUrl = trailerVideo ? `https://www.youtube.com/watch?v=${trailerVideo.key}` : `https://www.youtube.com/results?search_query=${encodeURIComponent(tv.name + ' official trailer')}`;
 
@@ -207,7 +210,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                     [{ text: "📝 Download Sinhala Subs", url: subUrl }]
                 ];
 
-                const replyMessage = `📺 <b>${tv.name}</b> (${year})\n\n⭐ <b>Rating:</b> ${tv.vote_average.toFixed(1)}/10\n🎭 <b>Genres:</b> ${genres}\n\n📝 <b>Overview:</b> <i>${tv.overview}</i>\n\n⚠️ <b>NOTE:</b> <i>To watch without annoying ads, please open the server links using <b>Brave Browser</b>.</i> 🦁`;
+                const replyMessage = `📺 <b>${tv.name}</b> (${year})\n\n⭐ <b>Rating:</b> ${tv.vote_average.toFixed(1)}/10\n🎭 <b>Genres:</b> ${genres}\n\n📝 <b>Overview:</b> <i>${tv.overview}</i>\n\n⚠️ <b>NOTE:</b> <i>To watch without annoying ads, open links with <b>Brave Browser</b>.</i> 🦁`;
                 
                 await bot.deleteMessage(chatId, msgId);
                 if (tv.poster_path) {
@@ -215,11 +218,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 } else { await bot.sendMessage(chatId, replyMessage, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } }); }
             }
         }
-    } catch (e) { 
-        console.error("Webhook Error:", e); 
-    } finally { 
-        res.sendStatus(200); 
-    }
+    } catch (e) { console.error("Webhook Error:", e); } finally { res.sendStatus(200); }
 });
 
 module.exports = app;
