@@ -25,7 +25,7 @@ async function getSinhalaSubLink(title) {
     return `https://sinhalasub.lk/?s=${encodeURIComponent(title)}`;
 }
 
-// ---- 🌐 1. HOME PAGE (HACKING ANIMATION) ----
+// ---- 🌐 1. HOME PAGE (DARK RED CYBERPUNK TERMINAL) ----
 app.get('/', (req, res) => {
     res.send(`
     <!DOCTYPE html>
@@ -35,13 +35,37 @@ app.get('/', (req, res) => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>CHUCKY MOVIE ZONE PRO - ONLINE</title>
         <style>
-            /* ── Reset & base ── */
-            *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+            @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+            *, *::before, *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            :root {
+                --red-bright: #ff1a1a;
+                --red-neon: #ff2d2d;
+                --red-glow: #cc0000;
+                --red-dim: #8b0000;
+                --red-deep: #3d0000;
+                --bg-black: #080808;
+                --bg-card: #0e0505;
+                --bg-card2: #140808;
+                --charcoal: #1a0a0a;
+                --text-muted: #a08080;
+                --text-faint: #6b4040;
+                --white: #f5e6e6;
+            }
+
+            html, body {
+                height: 100%;
+            }
 
             body {
-                background-color: #050505;
-                color: #00ff00;
-                font-family: 'Courier New', Courier, monospace;
+                background-color: var(--bg-black);
+                color: var(--red-neon);
+                font-family: 'Share Tech Mono', 'Courier New', Courier, monospace;
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
@@ -52,231 +76,364 @@ app.get('/', (req, res) => {
                 position: relative;
             }
 
-            /* ── CRT scanline overlay ── */
+            /* ── CRT SCANLINES + FLICKER OVERLAY ── */
             body::before {
                 content: '';
                 position: fixed;
                 inset: 0;
-                pointer-events: none;
-                z-index: 999;
                 background: repeating-linear-gradient(
-                    to bottom,
-                    transparent 0px,
-                    transparent 3px,
-                    rgba(0, 0, 0, 0.18) 3px,
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0, 0, 0, 0.18) 2px,
                     rgba(0, 0, 0, 0.18) 4px
                 );
+                pointer-events: none;
+                z-index: 9999;
+                animation: flicker 8s infinite;
             }
 
-            /* ── Subtle screen flicker ── */
+            /* Micro-glitch vignette */
             body::after {
                 content: '';
                 position: fixed;
                 inset: 0;
+                background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.75) 100%);
                 pointer-events: none;
-                z-index: 998;
-                background: rgba(0, 255, 0, 0.015);
-                animation: flicker 8s infinite;
+                z-index: 9998;
             }
 
             @keyframes flicker {
-                0%,  19%,  21%,  23%,  25%,  54%,  56%,  100% { opacity: 1; }
-                20%,  22%,  24%,  55% { opacity: 0.85; }
+                0%   { opacity: 1; }
+                92%  { opacity: 1; }
+                93%  { opacity: 0.82; }
+                94%  { opacity: 1; }
+                96%  { opacity: 0.88; }
+                97%  { opacity: 1; }
+                99%  { opacity: 0.9; }
+                100% { opacity: 1; }
             }
 
-            /* ── Terminal card ── */
+            /* ── MAIN TERMINAL CARD ── */
             .terminal {
                 width: 100%;
-                max-width: 750px;
-                background: rgba(0, 15, 0, 0.92);
-                border: 1px solid #00ff00;
+                max-width: 760px;
+                background: var(--bg-card);
+                border: 1px solid var(--red-glow);
                 box-shadow:
-                    0 0 18px rgba(0, 255, 0, 0.25),
-                    0 0 60px rgba(0, 255, 0, 0.08),
-                    inset 0 0 30px rgba(0, 255, 0, 0.03);
-                padding: 25px;
-                border-radius: 8px;
+                    0 0 8px rgba(204, 0, 0, 0.4),
+                    0 0 30px rgba(204, 0, 0, 0.15),
+                    0 0 60px rgba(204, 0, 0, 0.08),
+                    inset 0 0 40px rgba(61, 0, 0, 0.3);
+                padding: 28px;
+                border-radius: 6px;
                 position: relative;
-                animation: terminalBoot 0.4s ease-out;
+                z-index: 1;
+                animation: terminalPulse 4s ease-in-out infinite;
             }
 
-            @keyframes terminalBoot {
-                from { opacity: 0; transform: scaleY(0.96); }
-                to   { opacity: 1; transform: scaleY(1); }
+            @keyframes terminalPulse {
+                0%, 100% { box-shadow: 0 0 8px rgba(204,0,0,0.4), 0 0 30px rgba(204,0,0,0.15), 0 0 60px rgba(204,0,0,0.08), inset 0 0 40px rgba(61,0,0,0.3); }
+                50%       { box-shadow: 0 0 14px rgba(255,30,30,0.6), 0 0 45px rgba(204,0,0,0.25), 0 0 80px rgba(204,0,0,0.12), inset 0 0 50px rgba(61,0,0,0.4); }
             }
 
-            /* ── Header ── */
+            /* ── HEADER BAR ── */
             .header {
-                border-bottom: 1px solid #00ff00;
-                padding-bottom: 10px;
-                margin-bottom: 20px;
-                font-weight: bold;
+                border-bottom: 1px solid var(--red-glow);
+                padding-bottom: 12px;
+                margin-bottom: 24px;
                 display: flex;
                 justify-content: space-between;
+                align-items: center;
                 flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .header-title {
+                font-size: clamp(13px, 3.5vw, 16px);
+                font-weight: bold;
+                color: var(--red-bright);
+                text-shadow: 0 0 8px var(--red-bright), 0 0 20px var(--red-glow);
+                letter-spacing: 2px;
+                animation: titleGlow 2.5s ease-in-out infinite;
+            }
+
+            @keyframes titleGlow {
+                0%, 100% { text-shadow: 0 0 8px var(--red-bright), 0 0 20px var(--red-glow); }
+                50%       { text-shadow: 0 0 14px #ff4444, 0 0 35px var(--red-bright), 0 0 60px var(--red-glow); }
+            }
+
+            .header-status {
+                font-size: 12px;
+                color: var(--red-neon);
+                letter-spacing: 1px;
+                display: flex;
+                align-items: center;
                 gap: 6px;
             }
 
-            .header span:last-child {
-                animation: statusPulse 2.5s ease-in-out infinite;
-            }
-
-            @keyframes statusPulse {
-                0%, 100% { color: #00ff00; text-shadow: 0 0 6px #00ff00; }
-                50%       { color: #00cc00; text-shadow: 0 0 14px #00ff00, 0 0 28px rgba(0,255,0,0.4); }
-            }
-
-            /* ── Log output lines (typing animation) ── */
-            .output { overflow: hidden; }
-
-            .output .line {
-                margin-bottom: 8px;
-                overflow: hidden;
-                white-space: nowrap;
-                opacity: 0;
-                animation: typeLine 0.05s steps(1, end) forwards;
-            }
-
-            /* Each character "types" in via width expand */
-            .output .line span {
+            .status-dot {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: var(--red-bright);
+                box-shadow: 0 0 6px var(--red-bright), 0 0 14px var(--red-glow);
+                animation: dotBlink 1.4s ease-in-out infinite;
                 display: inline-block;
-                overflow: hidden;
+            }
+
+            @keyframes dotBlink {
+                0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--red-bright), 0 0 14px var(--red-glow); }
+                50%       { opacity: 0.3; box-shadow: none; }
+            }
+
+            /* ── TERMINAL LOG OUTPUT ── */
+            .output {
+                margin-bottom: 8px;
+            }
+
+            .output .log-line {
+                margin-bottom: 10px;
+                font-size: clamp(12px, 2.8vw, 14px);
+                color: var(--text-muted);
+                min-height: 1.4em;
+                display: flex;
+                align-items: center;
+                gap: 0;
+            }
+
+            .log-line .line-text {
+                border-right: 2px solid var(--red-bright);
                 white-space: nowrap;
+                overflow: hidden;
                 width: 0;
-                animation: typeChars var(--dur, 0.7s) steps(var(--steps, 50), end) forwards;
-                animation-delay: var(--delay, 0s);
+                animation: none;
             }
 
-            /* Line fade-in trigger */
-            .output .line { animation: none; opacity: 1; }
-
-            .output .line span {
-                width: 0;
-                max-width: 100%;
+            .log-line .line-text.typing-done {
+                border-right: none;
+                width: auto;
             }
 
-            @keyframes typeChars {
-                from { width: 0; }
-                to   { width: 100%; }
+            /* highlight [SUCCESS] / [OK] / [CONNECTED] tokens */
+            .log-line .tag-ok       { color: #ff6060; font-weight: bold; }
+            .log-line .tag-success  { color: var(--red-bright); font-weight: bold; text-shadow: 0 0 8px var(--red-bright); }
+            .log-line .tag-connected{ color: #ff8080; font-weight: bold; }
+
+            /* The big SUCCESS line */
+            .log-success-line {
+                margin-top: 14px;
+                font-size: clamp(12px, 3vw, 15px);
+                font-weight: bold;
+                color: var(--white);
+                text-shadow: 0 0 10px var(--red-bright), 0 0 24px var(--red-glow);
+                letter-spacing: 1px;
+                animation: successPulse 2s ease-in-out infinite;
+                opacity: 0;
+                transition: opacity 0.4s;
             }
 
-            /* Blinking cursor on the last line */
-            .output .line:last-child span::after {
-                content: '█';
-                animation: blink 0.9s step-end infinite;
-                margin-left: 1px;
-                font-size: 0.9em;
+            .log-success-line.visible {
+                opacity: 1;
             }
 
-            @keyframes blink {
+            @keyframes successPulse {
+                0%, 100% { text-shadow: 0 0 10px var(--red-bright), 0 0 24px var(--red-glow); }
+                50%       { text-shadow: 0 0 18px #ff4444, 0 0 40px var(--red-bright), 0 0 70px var(--red-glow); }
+            }
+
+            /* blinking cursor used during typing */
+            .cursor {
+                display: inline-block;
+                width: 8px;
+                height: 1em;
+                background: var(--red-bright);
+                box-shadow: 0 0 6px var(--red-bright);
+                vertical-align: middle;
+                margin-left: 2px;
+                animation: cursorBlink 0.7s step-end infinite;
+            }
+
+            @keyframes cursorBlink {
                 0%, 100% { opacity: 1; }
                 50%       { opacity: 0; }
             }
 
-            /* ── [+ SUCCESS] neon glow ── */
-            .success-line {
-                color: #ffffff !important;
-                font-weight: bold;
-                margin-top: 10px;
-                text-shadow:
-                    0 0 6px  #00ff00,
-                    0 0 14px #00ff00,
-                    0 0 30px rgba(0,255,0,0.6);
-                animation: successGlow 2s ease-in-out infinite alternate;
-            }
-
-            @keyframes successGlow {
-                from {
-                    text-shadow: 0 0 6px #00ff00, 0 0 14px #00ff00, 0 0 30px rgba(0,255,0,0.5);
-                }
-                to {
-                    text-shadow: 0 0 10px #00ff00, 0 0 26px #00ff00, 0 0 55px rgba(0,255,0,0.8), 0 0 80px rgba(0,255,0,0.3);
-                }
-            }
-
-            /* ── Success box ── */
+            /* ── SUCCESS BOX ── */
             .success-box {
-                margin-top: 25px;
-                border: 2px dashed #00ff00;
-                padding: 15px;
+                margin-top: 28px;
+                border: 1px dashed var(--red-glow);
+                padding: 18px 20px;
                 text-align: center;
-                background: rgba(0, 40, 0, 0.3);
-                box-shadow: inset 0 0 20px rgba(0,255,0,0.05);
+                background: rgba(80, 0, 0, 0.12);
+                border-radius: 4px;
+                box-shadow: 0 0 16px rgba(180, 0, 0, 0.1);
             }
 
-            /* ── Webhook button ── */
-            a.btn {
-                color: #000;
+            .success-box h3 {
+                margin: 0 0 8px 0;
+                color: var(--white);
+                font-size: clamp(13px, 3.5vw, 16px);
+                text-shadow: 0 0 10px rgba(255, 100, 100, 0.5);
+            }
+
+            .success-box p {
+                margin: 0 0 16px 0;
+                color: var(--text-muted);
+                font-size: clamp(11px, 2.5vw, 13px);
+                font-family: 'Share Tech Mono', monospace;
+            }
+
+            /* ── CYBERPUNK WEBHOOK BUTTON ── */
+            .btn-webhook {
+                display: inline-block;
+                color: var(--white);
                 text-decoration: none;
                 font-weight: bold;
-                background: #00ff00;
-                padding: 10px 20px;
-                border-radius: 4px;
-                display: inline-block;
-                margin-top: 10px;
-                font-family: 'Courier New', Courier, monospace;
-                font-size: 15px;
-                letter-spacing: 0.04em;
-                transition:
-                    background   0.25s ease,
-                    color        0.25s ease,
-                    box-shadow   0.25s ease,
-                    transform    0.15s ease;
+                font-family: 'Share Tech Mono', 'Courier New', monospace;
+                font-size: clamp(12px, 3vw, 14px);
+                letter-spacing: 2px;
+                padding: 12px 28px;
+                border-radius: 3px;
+                border: 1px solid var(--red-bright);
+                background: rgba(180, 0, 0, 0.15);
                 box-shadow:
-                    0 0 10px rgba(0,255,0,0.5),
-                    0 0 22px rgba(0,255,0,0.2);
+                    0 0 10px rgba(255, 30, 30, 0.35),
+                    0 0 25px rgba(204, 0, 0, 0.2),
+                    inset 0 0 10px rgba(180, 0, 0, 0.1);
+                cursor: pointer;
+                position: relative;
+                overflow: hidden;
+                transition: background 0.2s, box-shadow 0.2s;
             }
 
-            a.btn:hover {
-                background: #ffffff;
-                color: #000;
-                transform: translateY(-2px) scale(1.03);
+            .btn-webhook::before {
+                content: '';
+                position: absolute;
+                top: 0; left: -100%;
+                width: 60%;
+                height: 100%;
+                background: linear-gradient(120deg, transparent, rgba(255,40,40,0.18), transparent);
+                transition: left 0.45s ease;
+            }
+
+            .btn-webhook:hover::before {
+                left: 150%;
+            }
+
+            .btn-webhook:hover {
+                background: rgba(220, 0, 0, 0.28);
                 box-shadow:
-                    0 0 18px rgba(255,255,255,0.9),
-                    0 0 40px rgba(0,255,0,0.6),
-                    0 0 70px rgba(0,255,0,0.3);
+                    0 0 18px rgba(255, 30, 30, 0.65),
+                    0 0 45px rgba(204, 0, 0, 0.4),
+                    0 0 80px rgba(180, 0, 0, 0.2),
+                    inset 0 0 18px rgba(220, 0, 0, 0.2);
+                animation: btnGlitch 0.25s steps(2) 1;
             }
 
-            a.btn:active {
-                transform: translateY(0) scale(0.98);
-                box-shadow: 0 0 8px rgba(0,255,0,0.4);
+            @keyframes btnGlitch {
+                0%   { transform: translate(0,0); filter: none; }
+                25%  { transform: translate(-2px, 1px); filter: hue-rotate(15deg) brightness(1.2); }
+                50%  { transform: translate(2px, -1px); filter: hue-rotate(-10deg) brightness(1.3); }
+                75%  { transform: translate(-1px, 0px); filter: none; }
+                100% { transform: translate(0,0); }
             }
 
-            /* ── Mobile ── */
-            @media (max-width: 480px) {
+            .btn-webhook:active {
+                transform: scale(0.97);
+                box-shadow: 0 0 8px rgba(255,30,30,0.4);
+            }
+
+            /* ── RESPONSIVE ── */
+            @media (max-width: 520px) {
                 .terminal { padding: 18px 14px; }
-                .header { font-size: 13px; }
-                .output .line span { font-size: 12px; }
-                a.btn { font-size: 13px; padding: 9px 16px; }
+                .success-box { padding: 14px 12px; }
+                .btn-webhook { padding: 10px 20px; letter-spacing: 1px; }
             }
         </style>
     </head>
     <body>
         <div class="terminal">
             <div class="header">
-                <span>⚡ CHUCKY_CORE_OS_v3.0</span>
-                <span>STATUS: ONLINE</span>
+                <span class="header-title">⚡ CHUCKY_CORE_OS_v3.0</span>
+                <span class="header-status">
+                    <span class="status-dot"></span>
+                    STATUS: ONLINE
+                </span>
             </div>
+
             <div class="output">
-                <div class="line">
-                    <span style="--dur:1.1s; --steps:52; --delay:0.2s">[&gt;] Connecting to Vercel Serverless Gateway... [OK]</span>
+                <div class="log-line" id="line1">
+                    <span class="line-text" id="lt1"></span><span class="cursor" id="c1"></span>
                 </div>
-                <div class="line">
-                    <span style="--dur:1.4s; --steps:64; --delay:1.5s">[&gt;] Integrating Automated WordPress API Tunnel... [SUCCESS]</span>
+                <div class="log-line" id="line2">
+                    <span class="line-text" id="lt2"></span><span class="cursor" id="c2" style="display:none"></span>
                 </div>
-                <div class="line">
-                    <span style="--dur:1.5s; --steps:70; --delay:3.1s">[&gt;] Establishing secure tunnel handshake with Telegram API... [CONNECTED]</span>
+                <div class="log-line" id="line3">
+                    <span class="line-text" id="lt3"></span><span class="cursor" id="c3" style="display:none"></span>
                 </div>
-                <div class="line success-line">
-                    <span style="--dur:1.2s; --steps:55; --delay:4.8s">[+ SUCCESS] CHUCKY MOVIE ZONE IS FIXED &amp; DEPLOYED! 🚀</span>
+
+                <div class="log-success-line" id="successLine">
+                    [+ SUCCESS] CHUCKY MOVIE ZONE IS FIXED &amp; DEPLOYED! 🚀
                 </div>
             </div>
+
             <div class="success-box">
-                <h3 style="margin: 0 0 10px 0; color: #fff;">🤖 BOT SYSTEM STATUS: ACTIVE</h3>
-                <p style="margin: 5px 0 15px 0; color: #ccc; font-size: 13px;">බොට් වැඩ කරන්නේ නැත්නම් පහල බටන් එක ඔබන්න.</p>
-                <a href="/setup" class="btn">🚀 SET TELEGRAM WEBHOOK</a>
+                <h3>🤖 BOT SYSTEM STATUS: ACTIVE</h3>
+                <p>බොට් වැඩ කරන්නේ නැත්නම් පහල බටන් එක ඔබන්න.</p>
+                <a class="btn-webhook" href="/setup">🚀 SET TELEGRAM WEBHOOK</a>
             </div>
         </div>
+
+        <script>
+            const lines = [
+                { id: 'lt1', cursor: 'c1', raw: '[>] Connecting to Vercel Serverless Gateway... ', tag: '[OK]', tagClass: 'tag-ok' },
+                { id: 'lt2', cursor: 'c2', raw: '[>] Integrating Automated WordPress API Tunnel... ', tag: '[SUCCESS]', tagClass: 'tag-success' },
+                { id: 'lt3', cursor: 'c3', raw: '[>] Establishing secure tunnel handshake with Telegram API... ', tag: '[CONNECTED]', tagClass: 'tag-connected' },
+            ];
+
+            function typeLine(lineData, done) {
+                const el     = document.getElementById(lineData.id);
+                const cursor = document.getElementById(lineData.cursor);
+                cursor.style.display = 'inline-block';
+
+                const full = lineData.raw;
+                let i = 0;
+                const speed = 28; // ms per character
+
+                function tick() {
+                    if (i <= full.length) {
+                        el.textContent = full.slice(0, i);
+                        i++;
+                        setTimeout(tick, speed + (Math.random() * 18 | 0));
+                    } else {
+                        // Append coloured tag
+                        const tag = document.createElement('span');
+                        tag.className = lineData.tagClass;
+                        tag.textContent = lineData.tag;
+                        el.appendChild(tag);
+                        cursor.style.display = 'none';
+                        el.classList.add('typing-done');
+                        setTimeout(done, 220);
+                    }
+                }
+                tick();
+            }
+
+            function runSequence(index) {
+                if (index >= lines.length) {
+                    // Reveal success line
+                    setTimeout(() => {
+                        document.getElementById('successLine').classList.add('visible');
+                    }, 300);
+                    return;
+                }
+                typeLine(lines[index], () => runSequence(index + 1));
+            }
+
+            // Slight delay before starting so the terminal card animates in first
+            setTimeout(() => runSequence(0), 600);
+        </script>
     </body>
     </html>
     `);
