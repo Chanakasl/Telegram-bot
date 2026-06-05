@@ -124,7 +124,7 @@ async function sendGenreSearchResults(chatId, genreId, genreName, page = 1, mess
         const url = `https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&with_genres=${genreId}&sort_by=popularity.desc&page=${page}`;
         const resApi = await axios.get(url);
         const totalPages = Math.min(resApi.data.total_pages, 500);
-        const results = resApi.data.results ? resApi.data.results.slice(0, 5) : [];
+        constresults = resApi.data.results ? resApi.data.results.slice(0, 5) : [];
 
         if (results.length > 0) {
             let inlineKeyboard = [];
@@ -286,29 +286,30 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
 
             try { await bot.answerCallbackQuery(cb.id); } catch(e){}
 
+            // 🛠️ FIXES APPLIED VIA .trim() HERE
             if (data.startsWith('mov_p:')) {
                 const parts = data.split(':');
                 const pageNum = parseInt(parts[1]);
-                const queryStr = parts.slice(2).join(':'); 
+                const queryStr = parts.slice(2).join(':').trim(); 
                 await sendMovieSearchResults(chatId, queryStr, pageNum, msgId);
             }
             else if (data.startsWith('tv_p:')) {
                 const parts = data.split(':');
                 const pageNum = parseInt(parts[1]);
-                const queryStr = parts.slice(2).join(':');
+                const queryStr = parts.slice(2).join(':').trim();
                 await sendTvSearchResults(chatId, queryStr, pageNum, msgId);
             }
             else if (data.startsWith('year_p:')) {
                 const parts = data.split(':');
                 const pageNum = parseInt(parts[1]);
-                const yearStr = parts[2];
+                const yearStr = parts[2].trim();
                 await sendYearSearchResults(chatId, yearStr, pageNum, msgId);
             }
             else if (data.startsWith('gen_p:')) {
                 const parts = data.split(':');
                 const genreId = parts[1];
                 const pageNum = parseInt(parts[2]);
-                const genreName = parts[3];
+                const genreName = parts[3].trim();
                 await sendGenreSearchResults(chatId, genreId, genreName, pageNum, msgId);
             }
 
