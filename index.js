@@ -369,12 +369,12 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                                     `📅 <code>/year [year]</code> - වර්ෂය අනුව සෙවීමට (Ex: /year 2025)\n` +
                                     `👤 <code>/actor [name]</code> - නළුවෙක්/නිළියක් අනුව සෙවීමට\n\n` +
                                     `<b>🔥 Pro Features:</b>\n` +
-                                    `🔥 <code>/trending</code> - අද දවසේ ජනප්‍රියම ෆිල්ම්ส์\n` +
+                                    `🔥 <code>/trending</code> - අද දවසේ ජනප්‍රියම ෆිල්ම්ස්\n` +
                                     `🍿 <code>/nowplaying</code> - දැන් තිරගත වන චිත්‍රපට\n` +
                                     `📺 <code>/populartv</code> - ජනප්‍රියම ටෙලි කතාමාලා\n` +
-                                    `🌟 <code>/upcoming</code> - ළඟදීම එන ෆිල්ම්ส์\n` +
+                                    `🌟 <code>/upcoming</code> - ළඟදීම එන ෆිල්ම්ස්\n` +
                                     `🎲 <code>/random</code> - අහඹු ෆිල්ම් එකක්\n` +
-                                    `🏆 <code>/imdb250</code> - Top Rated ෆිල්ම්ส์\n` +
+                                    `🏆 <code>/imdb250</code> - Top Rated ෆිල්ම්ස්\n` +
                                     `📋 <code>/watchlist</code> - ඔබගේ බලන්න තියෙන ලයිස්තුව\n` +
                                     `📩 <code>/request [name]</code> - ඇඩ්මින්ගෙන් ඉල්ලන්න\n\n` +
                                     `⚠️ <b>වැදගත්:</b>\n<i>ඇඩ්ස් නැතුව බලන්න ලින්ක්ස් ඕපන් කරද්දී "Brave Browser" එක පාවිච්චි කරන්න! 🦁</i>`;
@@ -569,19 +569,31 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                     const tvName = decodeURIComponent(parts.slice(2).join(':'));
                     await sendTvSeasons(chatId, tvId, tvName, msgId);
                 }
+                
+                // 🚀 TV Episode Stream අලුත් Servers 5 එකතු කිරීම
                 else if (data.startsWith('tv_ep_stream:')) {
                     const parts = data.split(':');
                     const tvId = parts[1];
                     const seasonNum = parts[2];
                     const epNum = parts[3];
+                    
                     const embedUrl = `https://vidsrc.pro/embed/tv/${tvId}/${seasonNum}/${epNum}`;
                     const altUrl = `https://autoembed.co/tv/tmdb/${tvId}-${seasonNum}-${epNum}`;
+                    const multiUrl = `https://multiembed.mov/directstream.php?video_id=${tvId}&tmdb=1&s=${seasonNum}&e=${epNum}`;
+                    const suUrl = `https://embed.su/embed/tv/${tvId}/${seasonNum}/${epNum}`;
+                    const meUrl = `https://vidsrc.me/embed/tv?tmdb=${tvId}&sea=${seasonNum}&epi=${epNum}`;
+
                     const inlineKeyboard = [
-                        [{ text: "🚀 Watch Episode (Server 1)", url: embedUrl }],
-                        [{ text: "⚡ Watch Episode (Server 2)", url: altUrl }]
+                        [{ text: "🚀 Server 1 (VidSrc PRO)", url: embedUrl }],
+                        [{ text: "⚡ Server 2 (AutoEmbed)", url: altUrl }],
+                        [{ text: "🔥 Server 3 (MultiEmbed)", url: multiUrl }],
+                        [{ text: "💎 Server 4 (EmbedSu)", url: suUrl }],
+                        [{ text: "🛠️ Server 5 (VidSrc ME)", url: meUrl }]
                     ];
                     await bot.sendMessage(chatId, `🎬 <b>Episode ${epNum}</b> streaming links:`, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
                 }
+                
+                // 🚀 Movies සඳහා අලුත් Servers 5 එකතු කිරීම
                 else if (data.startsWith('mov_det:')) {
                     const tmdbId = data.split(':')[1];
                     const detailUrl = `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${TMDB_API_KEY}&language=en-US&append_to_response=videos`;
@@ -599,6 +611,9 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                     let inlineKeyboard = [
                         [{ text: "🚀 Server 1 (VidSrc PRO)", url: `https://vidsrc.pro/embed/movie/${embedId}` }],
                         [{ text: "⚡ Server 2 (AutoEmbed)", url: `https://autoembed.co/movie/imdb/${embedId}` }],
+                        [{ text: "🔥 Server 3 (MultiEmbed)", url: `https://multiembed.mov/directstream.php?video_id=${tmdbId}&tmdb=1` }],
+                        [{ text: "💎 Server 4 (EmbedSu)", url: `https://embed.su/embed/movie/${tmdbId}` }],
+                        [{ text: "🛠️ Server 5 (VidSrc ME)", url: `https://vidsrc.me/embed/movie?tmdb=${tmdbId}` }],
                         [
                             { text: "🎬 Watch Trailer", url: trailerUrl },
                             { text: "📝 Sinhala Subs", url: subUrl }
@@ -616,6 +631,8 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                         await bot.sendMessage(chatId, replyMessage, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } }); 
                     }
                 }
+                
+                // 🚀 TV Series සඳහා අලුත් Servers 5 එකතු කිරීම
                 else if (data.startsWith('tv_det:')) {
                     const tvId = data.split(':')[1];
                     const detailUrl = `https://api.themoviedb.org/3/tv/${tvId}?api_key=${TMDB_API_KEY}&language=en-US&append_to_response=videos`;
@@ -632,11 +649,14 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                     let inlineKeyboard = [
                         [{ text: "🚀 Server 1 (VidSrc PRO)", url: `https://vidsrc.pro/embed/tv/${tv.id}` }],
                         [{ text: "⚡ Server 2 (AutoEmbed)", url: `https://autoembed.co/tv/tmdb/${tv.id}-1-1` }],
+                        [{ text: "🔥 Server 3 (MultiEmbed)", url: `https://multiembed.mov/directstream.php?video_id=${tv.id}&tmdb=1&s=1&e=1` }],
+                        [{ text: "💎 Server 4 (EmbedSu)", url: `https://embed.su/embed/tv/${tv.id}/1/1` }],
+                        [{ text: "🛠️ Server 5 (VidSrc ME)", url: `https://vidsrc.me/embed/tv?tmdb=${tv.id}&sea=1&epi=1` }],
                         [
                             { text: "🎬 Watch Trailer", url: trailerUrl },
                             { text: "📝 Sinhala Subs", url: subUrl }
                         ],
-                        [{ text: "📺 Seasons & Episodes", callback_data: `tv_season_back:${tv.id}:${encodeURIComponent(tv.name)}` }], // <-- FIXED: Point to seasons list instead of episodes directly
+                        [{ text: "📺 Seasons & Episodes", callback_data: `tv_season_back:${tv.id}:${encodeURIComponent(tv.name)}` }], 
                         [{ text: "📺 Similar TV Shows", callback_data: `tv_sim:${tvId}` }],
                         [{ text: "➕ Add to Watchlist", callback_data: `watchlist_add:${tvId}:tv:${encodeURIComponent(tv.name)}` }]
                     ];
