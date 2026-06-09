@@ -1,6 +1,3 @@
-එල මචං! ඔයාගේ Bot ගේ Username එක (Chucky_movie_zone_bot) හරියටම /addgroup බටන් එකේ ලින්ක් එකට ඇතුලත් කරලා සම්පූර්ණ කෝඩ් එකම මෙන්න මම හැදුවා.
-වෙන කිසිම Feature එකක් වෙනස් කරලා නැහැ. මේක සම්පූර්ණයෙන්ම Copy කරලා index.js එකට Replace කරගන්න:
-```javascript
 const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
 const express = require('express');
