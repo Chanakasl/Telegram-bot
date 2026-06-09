@@ -1,3 +1,6 @@
+එල මචං! ඔයාගේ Bot ගේ Username එක (Chucky_movie_zone_bot) හරියටම /addgroup බටන් එකේ ලින්ක් එකට ඇතුලත් කරලා සම්පූර්ණ කෝඩ් එකම මෙන්න මම හැදුවා.
+වෙන කිසිම Feature එකක් වෙනස් කරලා නැහැ. මේක සම්පූර්ණයෙන්ම Copy කරලා index.js එකට Replace කරගන්න:
+```javascript
 const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
 const express = require('express');
@@ -108,7 +111,7 @@ async function sendYearSearchResults(chatId, year, page = 1, messageIdToEdit = n
             if (page < totalPages) paginationRow.push({ text: "Next ➡️", callback_data: `year_p:${page + 1}:${year}` });
             if (paginationRow.length > 0) inlineKeyboard.push(paginationRow);
 
-            const replyText = `🍿 <b>CHUCKY MOVIE ZONE</b>\n\n<i>📅 <b>${year}</b> වසරේ නිකුත් වූ ජනප්‍රිය... චිත්‍රපට (Page ${page}/${totalPages}):</i>`;
+            const replyText = `🍿 <b>CHUCKY MOVIE ZONE</b>\n\n<i>📅 <b>${year}</b> වසරේ නිකුත් වූ ජනප්‍රිය චිත්‍රපට (Page ${page}/${totalPages}):</i>`;
             
             if (messageIdToEdit) await bot.editMessageText(replyText, { chat_id: chatId, message_id: messageIdToEdit, parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
             else await bot.sendMessage(chatId, replyText, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
@@ -376,6 +379,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                                     `🎲 <code>/random</code> - අහඹු ෆිල්ම් එකක්\n` +
                                     `🏆 <code>/imdb250</code> - Top Rated ෆිල්ම්ස්\n` +
                                     `📋 <code>/watchlist</code> - ඔබගේ බලන්න තියෙන ලයිස්තුව\n` +
+                                    `➕ <code>/addgroup</code> - Bot ව Group එකකට Add කරන්න\n` +
                                     `📩 <code>/request [name]</code> - ඇඩ්මින්ගෙන් ඉල්ලන්න\n\n` +
                                     `⚠️ <b>වැදගත්:</b>\n<i>ඇඩ්ස් නැතුව බලන්න ලින්ක්ස් ඕපන් කරද්දී "Brave Browser" එක පාවිච්චි කරන්න! 🦁</i>`;
                 await bot.sendMessage(chatId, welcomeText, { parse_mode: 'HTML' });
@@ -460,6 +464,16 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
 
             else if (text === '/watchlist') {
                 await showWatchlist(chatId, userId);
+            }
+
+            // 🚀 අලුතින් එකතු කල /addgroup කමාන්ඩ් එක (Username එක සහිතව)
+            else if (text === '/addgroup') {
+                let inlineKeyboard = [
+                    [{ text: "➕ Add to Group", url: `https://t.me/Chucky_movie_zone_bot?startgroup=true` }]
+                ];
+                const addGroupText = `🤖 <b>Chucky Movie Zone Bot ඔබගේ Group එකට Add කරගන්න!</b>\n\n` +
+                                     `පහත Button එක Click කරලා Bot ව ඔයාගේ Group එකට ඇඩ් කරගන්න. Group එකේ ඉඳන් ලේසියෙන්ම ෆිල්ම්ස් සහ ටීවී සීරීස් හොයන්න මේක ගොඩක් ලේසි වෙයි! 🚀`;
+                await bot.sendMessage(chatId, addGroupText, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
             }
 
             else if (text.startsWith('/request ')) {
@@ -676,3 +690,5 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
 });
 
 module.exports = app;
+
+```
