@@ -8,8 +8,8 @@ app.use(express.json());
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN || ''; 
 const TMDB_API_KEY = process.env.TMDB_API_KEY || ''; 
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
-const CHANNEL_ID = process.env.CHANNEL_ID; // 👈 ඔයාගේ චැනල් එකේ ID එක (-100xxxx) හෝ නම (@yourchannel)
-const GOOGLE_PERSPECTIVE_KEY = process.env.GOOGLE_PERSPECTIVE_KEY; // 👈 Google API Key එක
+const CHANNEL_ID = process.env.CHANNEL_ID; 
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY; // 👈 දැන් පාවිච්චි කරන්නේ OpenRouter
 
 if (!TELEGRAM_TOKEN || !TMDB_API_KEY) {
     console.error("⚠️ FATAL ERROR: TELEGRAM_TOKEN or TMDB_API_KEY is missing!");
@@ -21,21 +21,36 @@ const activeUsers = new Set();
 const watchlists = new Map();
 const warningsMap = new Map(); // Bad word warnings ගණන් කරන්න
 
-// 🔍 GOOGLE PERSPECTIVE API (BAD WORD FILTER)
+// 🔍 OPENROUTER API (BAD WORD FILTER)
 async function isBadWord(text) {
-    if (!GOOGLE_PERSPECTIVE_KEY || !text) return false;
+    if (!OPENROUTER_API_KEY || !text) return false;
+    
     try {
-        const url = `https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze?key=${GOOGLE_PERSPECTIVE_KEY}`;
-        const data = {
-            comment: { text: text },
-            languages: ["en", "si"], // සිංහල (Singlish) සහ ඉංග්‍රීසි අඳුරගන්න
-            requestedAttributes: { TOXICITY: {} }
-        };
-        const res = await axios.post(url, data);
-        const score = res.data.attributeScores.TOXICITY.summaryScore.value;
-        return score > 0.75; // 75% ට වඩා කුණුහරුපයක්/Toxic නම් True දෙනවා
+        const response = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
+            model: "google/gemini-1.5-flash", // වේගවත්ම සහ සිංහල තේරෙන මොඩල් එකක්
+            messages: [
+                {
+                    role: "system",
+                    content: "You are a strict group moderator. Analyze the user's text. Does it contain bad words, profanity, or toxic language in English, Sinhala, or Singlish? Reply ONLY with the exact word 'YES' if it contains bad words, or 'NO' if it is clean. Do not explain."
+                },
+                {
+                    role: "user",
+                    content: text
+                }
+            ]
+        }, {
+            headers: {
+                "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+                "Content-Type": "application/json"
+            },
+            timeout: 5000 // තත්පර 5ක් ඇතුලත රෙස්පොන්ස් එකක් ආවේ නැත්නම් අතහැර දමයි
+        });
+
+        const reply = response.data.choices[0].message.content.trim().toUpperCase();
+        return reply.includes("YES"); // YES කියලා ආවොත් කුණුහරුපයක් ලෙස සලකයි
+        
     } catch (err) {
-        console.error("Google Perspective API Error:", err.message);
+        console.error("OpenRouter API Error:", err.message);
         return false;
     }
 }
@@ -125,7 +140,7 @@ app.get('/api/autopost', async (req, res) => {
     try {
         if (!CHANNEL_ID) return res.status(400).send("No CHANNEL_ID configured.");
         
-        // අහඹු පිටුවකින් (1-20) ජනප්‍රියම ෆිල්ම් එකක් තෝරාගැනීම
+        // අහඹු පිටුවකින් ජනප්‍රියම ෆිල්ම් එකක් තෝරාගැනීම
         const randomPage = Math.floor(Math.random() * 20) + 1;
         const url = `https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=en-US&page=${randomPage}`;
         const tmdbRes = await axios.get(url);
@@ -197,23 +212,21 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
             const userId = msg.from.id;
             const isGroup = msg.chat.type === 'supergroup' || msg.chat.type === 'group';
 
-            // 🛑 GOOGLE BAD WORD CHECKER (For Groups)
-            if (isGroup && GOOGLE_PERSPECTIVE_KEY) {
+            // 🛑 OPENROUTER BAD WORD CHECKER (For Groups)
+            if (isGroup && OPENROUTER_API_KEY && !text.startsWith('/')) {
                 const isToxic = await isBadWord(text);
                 if (isToxic) {
                     try {
-                        // 1. Delete the bad message
                         await bot.deleteMessage(chatId, msg.message_id);
                         
                         let warnings = warningsMap.get(userId) || 0;
                         warnings++;
                         warningsMap.set(userId, warnings);
 
-                        // 2. Warning first, then Mute
                         if (warnings === 1) {
                             await bot.sendMessage(chatId, `⚠️ <a href="tg://user?id=${userId}">${msg.from.first_name}</a>, <b>කරුණාකර අසභ්‍ය වචන භාවිතයෙන් වළකින්න!</b>\nමීළඟ වතාවේ ඔබව Group එකෙන් Mute කරනු ලැබේ.`, { parse_mode: 'HTML' });
                         } else {
-                            const untilDate = Math.floor(Date.now() / 1000) + (24 * 60 * 60); // 24 Hours mute
+                            const untilDate = Math.floor(Date.now() / 1000) + (24 * 60 * 60); 
                             await bot.restrictChatMember(chatId, userId, {
                                 can_send_messages: false,
                                 can_send_media_messages: false,
@@ -221,8 +234,8 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                             }, { until_date: untilDate });
                             await bot.sendMessage(chatId, `🚫 <a href="tg://user?id=${userId}">${msg.from.first_name}</a> <b>අසභ්‍ය වචන භාවිතය නිසා පැය 24කට Mute කරන ලදී.</b>`, { parse_mode: 'HTML' });
                         }
-                    } catch (err) { console.error("Mute Error. Bot might not be admin.", err.message); }
-                    return; // Stop further execution for this message
+                    } catch (err) { console.error("Mute Error:", err.message); }
+                    return; 
                 }
             }
 
