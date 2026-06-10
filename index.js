@@ -369,14 +369,14 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                                     `📅 <code>/year [year]</code> - වර්ෂය අනුව සෙවීමට (Ex: /year 2025)\n` +
                                     `👤 <code>/actor [name]</code> - නළුවෙක්/නිළියක් අනුව සෙවීමට\n\n` +
                                     `<b>🔥 Pro Features:</b>\n` +
-                                    `🔥 <code>/trending</code> - අද දවසේ ජනප්‍රියම ෆිල්ම්ส์\n` +
+                                    `🔥 <code>/trending</code> - අද දවසේ ජනප්‍රියම ෆිල්ම්ස්\n` +
                                     `🍿 <code>/nowplaying</code> - දැන් තිරගත වන චිත්‍රපට\n` +
                                     `📺 <code>/populartv</code> - ජනප්‍රියම ටෙලි කතාමාලා\n` +
-                                    `🌟 <code>/upcoming</code> - ළඟදීම එන ෆිල්ම්ส์\n` +
+                                    `🌟 <code>/upcoming</code> - ළඟදීම එන ෆිල්ම්ස්\n` +
                                     `🎲 <code>/random</code> - අහඹු ෆිල්ම් එකක්\n` +
-                                    `🏆 <code>/imdb250</code> - Top Rated ෆිල්ම්ส์\n` +
+                                    `🏆 <code>/imdb250</code> - Top Rated ෆිල්ම්ස්\n` +
                                     `📋 <code>/watchlist</code> - ඔබගේ බලන්න තියෙන ලයිස්තුව\n` +
-                                    `➕ <code>/addgroup</code> - Bot ව Group එකකට Add කරන්න\n` +
+                                    `📢 <code>/addchannel</code> - Bot ව Channel එකකට Add කරන්න\n` +
                                     `📩 <code>/request [name]</code> - ඇඩ්මින්ගෙන් ඉල්ලන්න\n\n` +
                                     `⚠️ <b>වැදගත්:</b>\n<i>ඇඩ්ස් නැතුව බලන්න ලින්ක්ස් ඕපන් කරද්දී "Brave Browser" එක පාවිච්චි කරන්න! 🦁</i>`;
                 await bot.sendMessage(chatId, welcomeText, { parse_mode: 'HTML' });
@@ -463,14 +463,15 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 await showWatchlist(chatId, userId);
             }
 
-            // 🚀 FIX: දැන් යූසර් /addgroup සමඟ ලින්ක් එකක් ගැහුවත් නැතත් මේ බ්ලොක් එක වැඩ කරනවා!
-            else if (text.startsWith('/addgroup')) {
+            // 🚀 FIX: චැනල් එකට සහ ගෲප් එකට ඇඩ් කරන්න පුළුවන් බටන්ස් 2ම තියෙනවා
+            else if (text.startsWith('/addgroup') || text.startsWith('/addchannel')) {
                 let inlineKeyboard = [
+                    [{ text: "📢 Add to Channel", url: `https://t.me/Chucky_movie_zone_bot?startchannel=true` }],
                     [{ text: "➕ Add to Group", url: `https://t.me/Chucky_movie_zone_bot?startgroup=true` }]
                 ];
-                const addGroupText = `🤖 <b>Chucky Movie Zone Bot ඔබගේ Group එකට Add කරගන්න!</b>\n\n` +
-                                     `⚠️ Telegram ආරක්ෂණ සීමාවන් නිසා බොට්ට ලින්ක්ස් හරහා ඔටෝම ගෲප් වලට ඇතුල් වෙන්න බැහැ.\n\n` +
-                                     `👉 හැබැයි පහල තියෙන <b>Add to Group</b> බටන් එක ක්ලික් කරලා ඔයාට තත්පරෙන් බොට්ව ඔයාගේ ගෲප් එකට ඇඩ් කරගන්න පුළුවන්! 🚀`;
+                const addGroupText = `🤖 <b>Chucky Movie Zone Bot ඔබගේ Channel හෝ Group එකට Add කරගන්න!</b>\n\n` +
+                                     `⚠️ Telegram ආරක්ෂණ සීමාවන් නිසා බොට්ට ලින්ක්ස් හරහා ඔටෝම ගෲප්/චැනල් වලට ඇතුල් වෙන්න බැහැ.\n\n` +
+                                     `👉 පහත තියෙන බටන්ස් ක්ලික් කරලා ඔයාට ලේසියෙන්ම බොට්ව ඔයාගේ <b>Channel</b> එකට හරි <b>Group</b> එකට හරි ඇඩ් කරගන්න පුළුවන්! (චැනල් එකට ඇඩ් වෙද්දී බොට්ව Admin විදිහට ගන්නවා, ඒක සාමාන්‍යයි) 🚀`;
                 await bot.sendMessage(chatId, addGroupText, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
             }
 
@@ -478,7 +479,7 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                 const reqMovie = text.replace('/request ', '').trim();
                 if (ADMIN_CHAT_ID) {
                     await bot.sendMessage(ADMIN_CHAT_ID, `📩 <b>New Movie Request!</b>\n\n🎬 Requested: <b>${reqMovie}</b>`, { parse_mode: 'HTML' });
-                    await bot.sendMessage(chatId, `✅ ඔයාගේ Request එක ඇඩ්مينට යැව්වා!`);
+                    await bot.sendMessage(chatId, `✅ ඔයාගේ Request එක ඇඩ්මින්ට යැව්වා!`);
                 }
             }
         }
@@ -581,6 +582,8 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                     const tvName = decodeURIComponent(parts.slice(2).join(':'));
                     await sendTvSeasons(chatId, tvId, tvName, msgId);
                 }
+                
+                // 🚀 TV Episode Stream අලුත් Servers 5 එකතු කිරීම
                 else if (data.startsWith('tv_ep_stream:')) {
                     const parts = data.split(':');
                     const tvId = parts[1];
@@ -602,6 +605,8 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                     ];
                     await bot.sendMessage(chatId, `🎬 <b>Episode ${epNum}</b> streaming links:`, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
                 }
+                
+                // 🚀 Movies සඳහා අලුත් Servers 5 එකතු කිරීම
                 else if (data.startsWith('mov_det:')) {
                     const tmdbId = data.split(':')[1];
                     const detailUrl = `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${TMDB_API_KEY}&language=en-US&append_to_response=videos`;
@@ -639,6 +644,8 @@ app.post(`/bot${TELEGRAM_TOKEN}`, async (req, res) => {
                         await bot.sendMessage(chatId, replyMessage, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } }); 
                     }
                 }
+                
+                // 🚀 TV Series සඳහා අලුත් Servers 5 එකතු කිරීම
                 else if (data.startsWith('tv_det:')) {
                     const tvId = data.split(':')[1];
                     const detailUrl = `https://api.themoviedb.org/3/tv/${tvId}?api_key=${TMDB_API_KEY}&language=en-US&append_to_response=videos`;
