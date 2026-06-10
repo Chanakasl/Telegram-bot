@@ -135,47 +135,42 @@ async function sendTvSearchResults(chatId, query, page = 1, messageIdToEdit = nu
     }
 }
 
-// ---- 🤖 AUTO POST TO CHANNEL (CRON JOB ENDPOINT) ----
+
+// ---- 🤖 AUTO POST TO CHANNEL (Cron Job එකෙන් 10 පාරක් පෝස්ට් වීමට) ----
 app.get('/api/autopost', async (req, res) => {
     try {
         if (!CHANNEL_ID) return res.status(400).send("No CHANNEL_ID configured.");
         
-        // අහඹු පිටුවකින් ජනප්‍රියම ෆිල්ම් එකක් තෝරාගැනීම
-        const randomPage = Math.floor(Math.random() * 20) + 1;
-        const url = `https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=en-US&page=${randomPage}`;
-        const tmdbRes = await axios.get(url);
-        
-        const randomMovie = tmdbRes.data.results[Math.floor(Math.random() * tmdbRes.data.results.length)];
-        const movieId = randomMovie.id;
-        
-        // Trailer එක ගන්නවා
-        const vidUrl = `https://api.themoviedb.org/3/movie/${movieId}/videos?api_key=${TMDB_API_KEY}&language=en-US`;
-        const vidRes = await axios.get(vidUrl);
-        const trailer = vidRes.data.results.find(v => v.type === 'Trailer' && v.site === 'YouTube');
-        const trailerLink = trailer ? `https://www.youtube.com/watch?v=${trailer.key}` : `https://www.youtube.com/results?search_query=${encodeURIComponent(randomMovie.title + ' trailer')}`;
+        // එක පාරටම ෆිල්ම්ස් 10ක් පෝස්ට් වීමට ලූපයක්
+        for (let i = 0; i < 10; i++) {
+            const randomPage = Math.floor(Math.random() * 20) + 1;
+            const url = `https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=en-US&page=${randomPage}`;
+            const tmdbRes = await axios.get(url);
+            
+            const randomMovie = tmdbRes.data.results[Math.floor(Math.random() * tmdbRes.data.results.length)];
+            const movieId = randomMovie.id;
+            
+            const vidUrl = `https://api.themoviedb.org/3/movie/${movieId}/videos?api_key=${TMDB_API_KEY}&language=en-US`;
+            const vidRes = await axios.get(vidUrl);
+            const trailer = vidRes.data.results.find(v => v.type === 'Trailer' && v.site === 'YouTube');
+            const trailerLink = trailer ? `https://www.youtube.com/watch?v=${trailer.key}` : `https://www.youtube.com/results?search_query=${encodeURIComponent(randomMovie.title + ' trailer')}`;
 
-        const year = randomMovie.release_date ? randomMovie.release_date.split('-')[0] : 'N/A';
-        const rating = randomMovie.vote_average?.toFixed(1) || 'N/A';
-        
-        const caption = `🎬 <b>${randomMovie.title} (${year})</b>\n\n` +
-                        `⭐ <b>Rating:</b> ${rating}/10\n\n` +
-                        `📝 <b>Overview:</b> <i>${randomMovie.overview || 'විස්තරයක් නොමැත.'}</i>\n\n` +
-                        `🎥 <b>Trailer:</b> <a href="${trailerLink}">YouTube හි නරඹන්න</a>\n\n` +
-                        `👇 <b>Full Movie එක බලන්න අපේ Group එකට Join වෙන්න!</b>\n` +
-                        `🔗 https://t.me/+W8xGn6KzYg81ZWU1`;
+            const year = randomMovie.release_date ? randomMovie.release_date.split('-')[0] : 'N/A';
+            const caption = `🎬 <b>${randomMovie.title} (${year})</b>\n\n` +
+                            `👇 <b>Full Movie එක බලන්න අපේ Group එකට Join වෙන්න!</b>\n` +
+                            `🔗 https://t.me/+W8xGn6KzYg81ZWU1`;
 
-        let inlineKeyboard = [
-            [{ text: "🎬 Watch Trailer", url: trailerLink }],
-            [{ text: "🔥 Join our Group", url: "https://t.me/+W8xGn6KzYg81ZWU1" }]
-        ];
-
-        if (randomMovie.poster_path) {
-            await bot.sendPhoto(CHANNEL_ID, `https://image.tmdb.org/t/p/w500${randomMovie.poster_path}`, { caption: caption, parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
-        } else {
-            await bot.sendMessage(CHANNEL_ID, caption, { parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: { inline_keyboard: inlineKeyboard } });
+            if (randomMovie.poster_path) {
+                await bot.sendPhoto(CHANNEL_ID, `https://image.tmdb.org/t/p/w500${randomMovie.poster_path}`, { caption: caption, parse_mode: 'HTML' });
+            } else {
+                await bot.sendMessage(CHANNEL_ID, caption, { parse_mode: 'HTML' });
+            }
+            
+            // එක පෝස්ට් එකක් සහ අනික අතර තත්පර 2ක පරතරයක් (Telegram API Limits නිසා)
+            await new Promise(resolve => setTimeout(resolve, 2000));
         }
         
-        res.status(200).send("Auto post published to channel successfully!");
+        res.status(200).send("10 posts published to channel successfully!");
     } catch (err) {
         console.error("Auto Post Error:", err.message);
         res.status(500).send("Auto post failed.");
