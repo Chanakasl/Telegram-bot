@@ -20,7 +20,7 @@ async function isBadWord(text) {
     if (!OPENROUTER_API_KEY || !text) return false;
     try {
         const response = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
-            model: "google/gemini-1.5-flash", 
+            model: "meta-llama/llama-3-8b-instruct:free", 
             messages: [
                 { role: "system", content: "You are a strict group moderator. Analyze the user's text. Does it contain bad words, profanity, or toxic language in English, Sinhala, or Singlish? Reply ONLY with the exact word 'YES' if it contains bad words, or 'NO' if it is clean. Do not explain." },
                 { role: "user", content: text }
