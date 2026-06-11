@@ -486,4 +486,7 @@ app.post('/*webhook', async (req, res) => {
     finally { res.sendStatus(200); }
 });
 
-module.exports.handler = serverless(app);
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Bot is running on port ${PORT}`);
+});
