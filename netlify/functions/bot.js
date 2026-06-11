@@ -16,17 +16,17 @@ const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: false });
 const watchlists = new Map();
 const warningsMap = new Map(); 
 
-// 🛑 රිපීට් වීම වැළැක්වීමේ Cache එක
 const postedMoviesCache = new Set();
+const allowedAdmins = [6629519111, 6467952735]; // ඔයාගේ ID දෙක
 
-// 🛑 OPENROUTER API (BAD WORD FILTER - FREE MODEL)
+// 🛑 100% API BASED BAD WORD FILTER
 async function isBadWord(text) {
     if (!OPENROUTER_API_KEY || !text) return false;
     try {
         const response = await axios.post("https://openrouter.ai/api/v1/chat/completions", {
             model: "meta-llama/llama-3-8b-instruct:free", 
             messages: [
-                { role: "system", content: "You are a strict group moderator. Analyze the user's text. Does it contain bad words, profanity, or toxic language in English, Sinhala, or Singlish? Reply ONLY with the exact word 'YES' if it contains bad words, or 'NO' if it is clean. Do not explain." },
+                { role: "system", content: "You are a toxic language detector. Does the following text contain bad words, profanity, insults, or toxic language in Sinhala, Singlish, or English? (e.g., pakaya, huththa, fuck, pako, wesi, wesige). Reply ONLY with 'YES' or 'NO'. Do not explain." },
                 { role: "user", content: text }
             ]
         }, {
@@ -68,7 +68,6 @@ async function sendMovieSearchResults(chatId, query, page = 1, messageIdToEdit =
             if (paginationRow.length > 0) inlineKeyboard.push(paginationRow);
 
             const replyText = `🍿 <b>CHUCKY MOVIE ZONE</b>\n\n<i>"${query}" සඳහා ප්‍රතිඵල (Page ${page}/${totalPages}):</i>`;
-            
             if (messageIdToEdit) await bot.editMessageText(replyText, { chat_id: chatId, message_id: messageIdToEdit, parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } }).catch(()=>{});
             else await bot.sendMessage(chatId, replyText, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } }).catch(()=>{});
         } else {
@@ -101,7 +100,6 @@ async function sendTvSearchResults(chatId, query, page = 1, messageIdToEdit = nu
             if (paginationRow.length > 0) inlineKeyboard.push(paginationRow);
 
             const replyText = `🍿 <b>CHUCKY MOVIE ZONE</b>\n\n<i>"${query}" සඳහා TV Series ප්‍රතිඵල (Page ${page}/${totalPages}):</i>`;
-            
             if (messageIdToEdit) await bot.editMessageText(replyText, { chat_id: chatId, message_id: messageIdToEdit, parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } }).catch(()=>{});
             else await bot.sendMessage(chatId, replyText, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } }).catch(()=>{});
         } else {
@@ -239,6 +237,13 @@ app.post('/*webhook', async (req, res) => {
             if (isGroup && OPENROUTER_API_KEY && !text.startsWith('/')) {
                 const isToxic = await isBadWord(text);
                 if (isToxic) {
+                    // ඔයා ඇඩ්මින් කෙනෙක් නම් Telegram එකෙන් මැසේජ් මකන්න දෙන්නේ නෑ. ඒක පෙන්නන්න මේ කෑල්ල දැම්මා.
+                    if (allowedAdmins.includes(userId)) {
+                        await bot.sendMessage(chatId, `⚠️ <a href="tg://user?id=${userId}">${msg.from.first_name}</a>, ඔබ Admin කෙනෙක් නිසා මැසේජ් එක මකන්න හෝ Mute කරන්න බොට්ට අවසර නෑ (Telegram API නීති). හැබැයි මේක කුණුහරුපයක් කියලා බොට් අඳුරගත්තා! ✅`, { parse_mode: 'HTML' }).catch(()=>{});
+                        return res.sendStatus(200);
+                    }
+
+                    // සාමාන්‍ය මෙම්බර් කෙනෙක් නම් මකලා Mute කරනවා
                     try {
                         await bot.deleteMessage(chatId, msg.message_id);
                         let warnings = warningsMap.get(userId) || 0;
@@ -252,7 +257,9 @@ app.post('/*webhook', async (req, res) => {
                             await bot.restrictChatMember(chatId, userId, { can_send_messages: false }, { until_date: untilDate });
                             await bot.sendMessage(chatId, `🚫 <a href="tg://user?id=${userId}">${msg.from.first_name}</a> <b>අසභ්‍ය වචන භාවිතය නිසා පැය 24කට Mute කරන ලදී.</b>`, { parse_mode: 'HTML' });
                         }
-                    } catch (err) {}
+                    } catch (err) {
+                        console.error("Mute Failed:", err.message);
+                    }
                     return res.sendStatus(200); 
                 }
             }
@@ -283,13 +290,11 @@ app.post('/*webhook', async (req, res) => {
             else if (text.startsWith('/movie ')) { await sendMovieSearchResults(chatId, text.replace('/movie ', '').trim(), 1); }
             else if (text.startsWith('/tv ')) { await sendTvSearchResults(chatId, text.replace('/tv ', '').trim(), 1); }
             else if (text.startsWith('/actor ')) { await sendActorSearchResults(chatId, text.replace('/actor ', '').trim(), 1); }
-            
             else if (text.startsWith('/year ')) {
                 const year = text.replace('/year ', '').trim();
                 if (/^\d{4}$/.test(year)) await sendYearSearchResults(chatId, year, 1);
                 else await bot.sendMessage(chatId, "⚠️ නිවැරදි වර්ෂයක් ඇතුලත් කරන්න. (Ex: /year 2025)");
             }
-            
             else if (text === '/genres') {
                 let inlineKeyboard = [
                     [{ text: "💥 Action", callback_data: "gen_p:28:1:Action" }, { text: "😂 Comedy", callback_data: "gen_p:35:1:Comedy" }],
@@ -299,46 +304,38 @@ app.post('/*webhook', async (req, res) => {
                 ];
                 await bot.sendMessage(chatId, "🎭 <b>ඔබ කැමති සිනමා කාණ්ඩය තෝරන්න:</b>", { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
             }
-
             else if (text === '/trending') {
                 const resApi = await axios.get(`https://api.themoviedb.org/3/trending/movie/day?api_key=${TMDB_API_KEY}`);
                 let inlineKeyboard = resApi.data.results.slice(0, 10).map(m => [{ text: `🔥 ${m.title}`, callback_data: `mov_det:${m.id}` }]);
                 await bot.sendMessage(chatId, "🔥 <b>අද දවසේ ජනප්‍රියම චිත්‍රපට:</b>", { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
             }
-
             else if (text === '/nowplaying') {
                 const resApi = await axios.get(`https://api.themoviedb.org/3/movie/now_playing?api_key=${TMDB_API_KEY}&language=en-US&page=1`);
                 let inlineKeyboard = resApi.data.results.slice(0, 10).map(m => [{ text: `🎬 ${m.title}`, callback_data: `mov_det:${m.id}` }]);
                 await bot.sendMessage(chatId, "🍿 <b>දැන් තිරගත වන චිත්‍රපට:</b>", { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
             }
-
             else if (text === '/populartv') {
                 const resApi = await axios.get(`https://api.themoviedb.org/3/tv/popular?api_key=${TMDB_API_KEY}&language=en-US&page=1`);
                 let inlineKeyboard = resApi.data.results.slice(0, 10).map(t => [{ text: `📺 ${t.name}`, callback_data: `tv_det:${t.id}` }]);
                 await bot.sendMessage(chatId, "📺 <b>ජනප්‍රියම ටෙලි කතාමාලා:</b>", { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
             }
-
             else if (text === '/upcoming') {
                 const resApi = await axios.get(`https://api.themoviedb.org/3/movie/upcoming?api_key=${TMDB_API_KEY}&language=en-US&page=1`);
                 let inlineKeyboard = resApi.data.results.slice(0, 10).map(m => [{ text: `🌟 ${m.title}`, callback_data: `mov_det:${m.id}` }]);
                 await bot.sendMessage(chatId, "🌟 <b>ළඟදීම තිරගත වීමට නියමිත චිත්‍රපට:</b>", { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
             }
-
             else if (text === '/imdb250') {
                 const resApi = await axios.get(`https://api.themoviedb.org/3/movie/top_rated?api_key=${TMDB_API_KEY}&language=en-US&page=1`);
                 let inlineKeyboard = resApi.data.results.slice(0, 10).map(m => [{ text: `🏆 ${m.title} (${m.vote_average})`, callback_data: `mov_det:${m.id}` }]);
                 await bot.sendMessage(chatId, "🏆 <b>ලොව ඉහලින්ම ශ්‍රේණිගත කළ චිත්‍රපට:</b>", { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } });
             }
-
             else if (text === '/random') {
                 const randomPage = Math.floor(Math.random() * 50) + 1;
                 const resApi = await axios.get(`https://api.themoviedb.org/3/discover/movie?api_key=${TMDB_API_KEY}&language=en-US&sort_by=popularity.desc&page=${randomPage}`);
                 const randomMovie = resApi.data.results[Math.floor(Math.random() * resApi.data.results.length)];
                 await bot.sendMessage(chatId, `🎲 <b>අහඹු චිත්‍රපටයක්:</b>\n👉 <i>${randomMovie.title}</i>`, { parse_mode: 'HTML', reply_markup: { inline_keyboard: [[{ text: `🎬 විස්තර බලන්න`, callback_data: `mov_det:${randomMovie.id}` }]] } });
             }
-
             else if (text === '/watchlist') { await showWatchlist(chatId, userId); }
-
             else if (text.startsWith('/addgroup') || text.startsWith('/addchannel')) {
                 let inlineKeyboard = [
                     [{ text: "📢 Add to Channel", url: `https://t.me/Chucky_movie_zone_bot?startchannel=true` }],
@@ -346,7 +343,6 @@ app.post('/*webhook', async (req, res) => {
                 ];
                 await bot.sendMessage(chatId, `🤖 <b>Bot ඔබගේ Channel හෝ Group එකට Add කරගන්න!</b>`, { parse_mode: 'HTML', reply_markup: { inline_keyboard: inlineKeyboard } }).catch(()=>{});
             }
-
             else if (text.startsWith('/request ')) {
                 if (ADMIN_CHAT_ID) {
                     await bot.sendMessage(ADMIN_CHAT_ID, `📩 <b>New Request!</b>\n🎬 ${text.replace('/request ', '')}`, { parse_mode: 'HTML' });
@@ -356,12 +352,7 @@ app.post('/*webhook', async (req, res) => {
 
             // 🚀 TOP SECRET MANUAL CHANNEL POSTING TEST COMMAND
             else if (text === '/testpost') {
-                const allowedAdmins = [6629519111, 6467952735]; // ඔයාගේ ID දෙක පමණි
-                
-                // ඇඩ්මින් කෙනෙක් නෙවෙයි නම් කිසිම දෙයක් නොකර නිශ්ශබ්දව ඉන්නවා
-                if (!allowedAdmins.includes(userId)) {
-                    return res.sendStatus(200);
-                }
+                if (!allowedAdmins.includes(userId)) return res.sendStatus(200);
                 
                 if (!CHANNEL_ID) {
                     await bot.sendMessage(chatId, "⚠️ CHANNEL_ID එක සෙට් කරලා නෑ!");
@@ -376,7 +367,6 @@ app.post('/*webhook', async (req, res) => {
                         let randomMovie = null;
                         let attempts = 0;
                         
-                        // රිපීට් වෙන්නෙ නැති ෆිල්ම් එකක් හොයනකම් ලූප් වෙනවා
                         while (attempts < 20) {
                             const randomPage = Math.floor(Math.random() * 20) + 1;
                             const tmdbRes = await axios.get(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=en-US&page=${randomPage}`);
@@ -385,17 +375,13 @@ app.post('/*webhook', async (req, res) => {
                             if (!postedMoviesCache.has(candidate.id)) {
                                 randomMovie = candidate;
                                 postedMoviesCache.add(candidate.id);
-                                
-                                // Cache එක ඕනෑවට වඩා පිරුණොත් පරණම ඒවා මකනවා (Memory සීමාවන් නිසා)
-                                if (postedMoviesCache.size > 500) { 
-                                    postedMoviesCache.delete(postedMoviesCache.values().next().value);
-                                }
+                                if (postedMoviesCache.size > 500) postedMoviesCache.delete(postedMoviesCache.values().next().value);
                                 break;
                             }
                             attempts++;
                         }
 
-                        if (!randomMovie) continue; // අලුත් එකක් හම්බුනේ නැත්නම් ඊළඟ එකට යනවා
+                        if (!randomMovie) continue; 
                         
                         const vidRes = await axios.get(`https://api.themoviedb.org/3/movie/${randomMovie.id}/videos?api_key=${TMDB_API_KEY}&language=en-US`);
                         const trailer = vidRes.data.results.find(v => v.type === 'Trailer' && v.site === 'YouTube');
@@ -419,7 +405,6 @@ app.post('/*webhook', async (req, res) => {
                         }
                         
                         postedCount++;
-                        // Netlify Timeout limit (10s) බේරගන්න Delay එක 300ms කරලා තියෙන්නේ.
                         await new Promise(resolve => setTimeout(resolve, 300)); 
                     }
                     await bot.sendMessage(chatId, `✅ අලුත් පෝස්ට් ${postedCount}ක් සාර්ථකව චැනල් එකට දැම්මා! (Top Secret 😎)`);
