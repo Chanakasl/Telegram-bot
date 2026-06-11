@@ -1,9 +1,9 @@
 {
   "name": "chucky-movie-bot",
   "version": "1.0.0",
-  "main": "bot.js",
+  "main": "netlify/functions/bot.js",
   "scripts": {
-    "start": "node bot.js"
+    "start": "node netlify/functions/bot.js"
   },
   "dependencies": {
     "node-telegram-bot-api": "^0.61.0",
