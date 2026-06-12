@@ -1,12 +1,13 @@
 {
-  "name": "chucky-movie-bot",
+  "name": "chucky-movie-bot-railway",
   "version": "1.0.0",
-  "main": "netlify/functions/bot.js",
+  "main": "bot.js",
   "scripts": {
-    "start": "node netlify/functions/bot.js"
+    "start": "node bot.js"
   },
   "dependencies": {
-    "node-telegram-bot-api": "^0.61.0",
-    "axios": "^1.3.4"
+    "axios": "^1.6.8",
+    "express": "^4.19.2",
+    "node-telegram-bot-api": "^0.65.0"
   }
 }
