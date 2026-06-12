@@ -249,7 +249,7 @@ bot.on('message', async (msg) => {
             if (!CHANNEL_ID) return bot.sendMessage(chatId, "⚠️ CHANNEL_ID නෑ!");
             await bot.sendMessage(chatId, "⏳ Auto Post Test ආරම්භ කරනවා...");
             let count = 0;
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < 10; i++) {
                 const res = await axios.get(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&page=${Math.floor(Math.random()*10)+1}`);
                 const m = res.data.results[Math.floor(Math.random() * res.data.results.length)];
                 if (!postedMoviesCache.has(m.id)) {
