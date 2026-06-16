@@ -1,6 +1,7 @@
 const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
 const express = require('express');
+const mongoose = require('mongoose');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -10,6 +11,22 @@ const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 const CHANNEL_ID = process.env.CHANNEL_ID;
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+
+// MongoDB Connection
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://Chanakasampath:YOyJJzz87v7FPWPx@cluster0.jizuo.mongodb.net/?appName=Cluster0";
+
+mongoose.connect(MONGODB_URI)
+    .then(() => console.log('✅ MongoDB Connected Successfully!'))
+    .catch(err => console.error('❌ MongoDB Connection Error:', err));
+
+// MongoDB User Schema
+const userSchema = new mongoose.Schema({
+    userId: { type: Number, unique: true },
+    firstName: String,
+    username: String,
+    joinedAt: { type: Date, default: Date.now }
+});
+const User = mongoose.model('User', userSchema);
 
 const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
 
@@ -124,8 +141,26 @@ bot.on('message', async (msg) => {
     const text = msg.text;
     const userId = msg.from.id;
     const isGroup = msg.chat.type === 'supergroup' || msg.chat.type === 'group';
+    const isPrivate = msg.chat.type === 'private';
 
-    // 🛑 BAD WORD LOGIC
+    // 💾 MONGODB: SAVE USER IF PRIVATE CHAT
+    if (isPrivate) {
+        try {
+            const existingUser = await User.findOne({ userId: userId });
+            if (!existingUser) {
+                await User.create({
+                    userId: userId,
+                    firstName: msg.from.first_name || 'Unknown',
+                    username: msg.from.username || ''
+                });
+                console.log(`✅ New user saved to Database: ${msg.from.first_name}`);
+            }
+        } catch (dbErr) {
+            console.error("DB Save Error:", dbErr.message);
+        }
+    }
+
+    // 🛑 BAD WORD LOGIC (For Groups)
     if (isGroup && !text.startsWith('/')) {
         if (await isBadWord(text)) {
             if (!allowedAdmins.includes(userId)) {
@@ -145,7 +180,7 @@ bot.on('message', async (msg) => {
         }
     }
 
-    // COMMAND NORMALIZATION (Fixes the @bot_username issue)
+    // COMMAND NORMALIZATION
     let args = text.split(' ');
     let cmd = args[0].toLowerCase();
     if (cmd.includes('@')) cmd = cmd.split('@')[0]; 
@@ -228,12 +263,6 @@ bot.on('message', async (msg) => {
             let kb = res.data.results.slice(0, 10).map(m => [{ text: `🏆 ${m.title} (${m.vote_average})`, callback_data: `mov_det:${m.id}` }]);
             await bot.sendMessage(chatId, "🏆 <b>ලොව ඉහලින්ම ශ්‍රේණිගත කළ චිත්‍රපට:</b>", { parse_mode: 'HTML', reply_markup: { inline_keyboard: kb } });
         }
-        else if (cmd === '/watchlist') {
-            const list = watchlists.get(userId) || [];
-            if (list.length === 0) return bot.sendMessage(chatId, "📭 Your watchlist is empty.");
-            let kb = list.map(i => [{ text: `🎬 ${i.title}`, callback_data: `mov_det:${i.id}` }]);
-            await bot.sendMessage(chatId, "📋 <b>Your Watchlist:</b>", { parse_mode: 'HTML', reply_markup: { inline_keyboard: kb } });
-        }
         else if (cmd === '/addgroup' || cmd === '/addchannel') {
             let kb = [[{ text: "📢 Add to Channel", url: `https://t.me/Chucky_movie_zone_bot?startchannel=true` }], [{ text: "➕ Add to Group", url: `https://t.me/Chucky_movie_zone_bot?startgroup=true` }]];
             await bot.sendMessage(chatId, `🤖 <b>Bot ඔබගේ Channel හෝ Group එකට Add කරගන්න!</b>`, { parse_mode: 'HTML', reply_markup: { inline_keyboard: kb } });
@@ -241,15 +270,46 @@ bot.on('message', async (msg) => {
         else if (cmd === '/request') {
             if (!query) return bot.sendMessage(chatId, "⚠️ කරුණාකර චිත්‍රපටයේ නම ඇතුලත් කරන්න.");
             if (ADMIN_CHAT_ID) {
-                await bot.sendMessage(ADMIN_CHAT_ID, `📩 <b>New Request!</b>\n🎬 ${query}`, { parse_mode: 'HTML' });
+                await bot.sendMessage(ADMIN_CHAT_ID, `📩 <b>New Request!</b>\n🎬 ${query}\n👤 By: @${msg.from.username || msg.from.first_name}`, { parse_mode: 'HTML' });
                 await bot.sendMessage(chatId, `✅ Request එක ඇඩ්මින්ට යැව්වා!`);
             }
+        }
+        // 🗑️ CLEAR DATABASE COMMAND (MAIN OWNER ONLY)
+        else if (cmd === '/cleardb' && userId === 6629519111) {
+            await bot.sendMessage(chatId, "⏳ Database එක සම්පූර්ණයෙන්ම Clear කිරීම ආරම්භ කළා...");
+            try {
+                const result = await User.deleteMany({});
+                await bot.sendMessage(chatId, `🗑️ <b>Database එක Fully Clear කළා!</b>\n\n✅ මැකූ මුළු Users ලා ගණන: ${result.deletedCount}`, { parse_mode: 'HTML' });
+                console.log(`⚠️ Database was fully cleared by Main Admin! Deleted count: ${result.deletedCount}`);
+            } catch (dbErr) {
+                await bot.sendMessage(chatId, `❌ Database එක Clear කිරීමට නොහැකි වුණා: ${dbErr.message}`);
+            }
+        }
+        // 📢 BROADCAST COMMAND (ADMIN ONLY)
+        else if (cmd === '/broadcast' && allowedAdmins.includes(userId)) {
+            if (!query) return bot.sendMessage(chatId, "⚠️ කරුණාකර යැවිය යුතු මැසේජ් එක ඇතුලත් කරන්න.\nඋදා: `/broadcast ඔන්න අලුත් ෆිල්ම් එකක් ආවා!`", { parse_mode: 'Markdown' });
+
+            await bot.sendMessage(chatId, "⏳ Broadcast එක යැවීම ආරම්භ කරනවා...");
+            const users = await User.find({});
+            let successCount = 0;
+            let failCount = 0;
+
+            for (let user of users) {
+                try {
+                    await bot.sendMessage(user.userId, `📢 <b>ඇඩ්මින්ගෙන් පණිවිඩයක්:</b>\n\n${query}`, { parse_mode: 'HTML' });
+                    successCount++;
+                    await new Promise(resolve => setTimeout(resolve, 200)); 
+                } catch (e) {
+                    failCount++; 
+                }
+            }
+            await bot.sendMessage(chatId, `✅ <b>Broadcast සම්පූර්ණයි!</b>\n\n✅ යැවූ ගණන: ${successCount}\n❌ අසාර්ථක ගණන: ${failCount}`, { parse_mode: 'HTML' });
         }
         else if (cmd === '/testpost' && allowedAdmins.includes(userId)) {
             if (!CHANNEL_ID) return bot.sendMessage(chatId, "⚠️ CHANNEL_ID නෑ!");
             await bot.sendMessage(chatId, "⏳ Auto Post Test ආරම්භ කරනවා...");
             let count = 0;
-            for (let i = 0; i < 10; i++) {
+            for (let i = 0; i < 5; i++) {
                 const res = await axios.get(`https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&page=${Math.floor(Math.random()*10)+1}`);
                 const m = res.data.results[Math.floor(Math.random() * res.data.results.length)];
                 if (!postedMoviesCache.has(m.id)) {
