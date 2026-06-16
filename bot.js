@@ -35,7 +35,7 @@ const searchSchema = new mongoose.Schema({
 });
 const Search = mongoose.model('Search', searchSchema);
 
-const bot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
+const bot = new TelegramBot(TELEGRAM_TOKEN, { webHook: true });
 
 const watchlists = new Map();
 const warningsMap = new Map();
@@ -449,6 +449,8 @@ bot.on('callback_query', async (cb) => {
         } catch(e) {}
     }
 });
+
+bot.setWebHook(`https://${process.env.RAILWAY_STATIC_URL}/bot${TELEGRAM_TOKEN}`);
 
 app.get('/', (req, res) => res.send('Bot is running on Railway!'));
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
