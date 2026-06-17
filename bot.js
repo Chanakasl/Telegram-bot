@@ -4,6 +4,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 
 const app = express();
+app.use(express.json()); // ⚠️ Webhook වලට මේක අනිවාර්යයි!
 const PORT = process.env.PORT || 3000;
 
 // 🔑 Environment Variables
@@ -13,6 +14,9 @@ const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 const CHANNEL_ID = process.env.CHANNEL_ID;
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://Chanakasampath:YOyJJzz87v7FPWPx@cluster0.jizuo.mongodb.net/?appName=Cluster0";
+
+// 🌐 Railway Auto Domain
+const domain = process.env.RAILWAY_PUBLIC_DOMAIN; 
 
 // 💾 MongoDB Connection
 mongoose.connect(MONGODB_URI)
@@ -24,18 +28,33 @@ const userSchema = new mongoose.Schema({
     userId: { type: Number, unique: true },
     firstName: String,
     username: String,
-    isPremium: { type: Boolean, default: false }, // 👑 VIP SYSTEM
+    isPremium: { type: Boolean, default: false },
     joinedAt: { type: Date, default: Date.now }
 });
 const User = mongoose.model('User', userSchema);
 
 const searchSchema = new mongoose.Schema({
     query: { type: String, unique: true },
-    count: { type: Number, default: 1 } // 🔍 SEARCH HISTORY
+    count: { type: Number, default: 1 }
 });
 const Search = mongoose.model('Search', searchSchema);
 
-const bot = new TelegramBot(TELEGRAM_TOKEN, { webHook: true });
+// 🤖 Bot Initialization (Auto Switch between Webhook & Polling)
+let bot;
+if (domain) {
+    bot = new TelegramBot(TELEGRAM_TOKEN);
+    bot.setWebHook(`https://${domain}/bot${TELEGRAM_TOKEN}`);
+    console.log(`✅ Webhook Auto-Set to: https://${domain}`);
+    
+    // Webhook Route
+    app.post(`/bot${TELEGRAM_TOKEN}`, (req, res) => {
+        bot.processUpdate(req.body);
+        res.sendStatus(200);
+    });
+} else {
+    bot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
+    console.log('✅ Polling started (No Domain Found)');
+}
 
 const watchlists = new Map();
 const warningsMap = new Map();
@@ -450,7 +469,7 @@ bot.on('callback_query', async (cb) => {
     }
 });
 
-bot.setWebHook(`https://${process.env.RAILWAY_STATIC_URL}/bot${TELEGRAM_TOKEN}`);
-
+// Home route to check if server is running
 app.get('/', (req, res) => res.send('Bot is running on Railway!'));
+
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
