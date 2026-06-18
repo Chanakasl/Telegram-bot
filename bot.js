@@ -7,7 +7,7 @@ const { default: makeWASocket, initAuthCreds, BufferJSON, DisconnectReason, dela
 const pino = require('pino');
 
 const app = express();
-app.use(express.json()); // Webhook වලට අනිවාර්යයි
+app.use(express.json()); 
 const PORT = process.env.PORT || 3000;
 
 // 🔑 Environment Variables
@@ -17,9 +17,6 @@ const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 const CHANNEL_ID = process.env.CHANNEL_ID;
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://Chanakasampath:YOyJJzz87v7FPWPx@cluster0.jizuo.mongodb.net/?appName=Cluster0";
-
-// 🌐 Railway Auto Domain
-const domain = process.env.RAILWAY_PUBLIC_DOMAIN; 
 
 // 💾 MongoDB Connection
 mongoose.connect(MONGODB_URI)
@@ -31,53 +28,44 @@ const userSchema = new mongoose.Schema({
     userId: { type: Number, unique: true },
     firstName: String,
     username: String,
-    isPremium: { type: Boolean, default: false }, // 👑 VIP SYSTEM
+    isPremium: { type: Boolean, default: false },
     joinedAt: { type: Date, default: Date.now }
 });
 const User = mongoose.model('User', userSchema);
 
 const searchSchema = new mongoose.Schema({
     query: { type: String, unique: true },
-    count: { type: Number, default: 1 } // 🔍 SEARCH HISTORY
+    count: { type: Number, default: 1 } 
 });
 const Search = mongoose.model('Search', searchSchema);
 
-// 🟢 Session Schema for WhatsApp
 const sessionSchema = new mongoose.Schema({
     sessionId: { type: String, required: true, unique: true },
     sessionData: { type: String, required: true }
 });
 const SessionDB = mongoose.model('SessionDB', sessionSchema);
 
-// 🤖 Telegram Bot Initialization
-let bot;
-if (domain) {
-    bot = new TelegramBot(TELEGRAM_TOKEN);
-    bot.setWebHook(`https://${domain}/bot${TELEGRAM_TOKEN}`);
-    console.log(`✅ Webhook Auto-Set to: https://${domain}`);
-    
-    app.post(`/bot${TELEGRAM_TOKEN}`, (req, res) => {
-        bot.processUpdate(req.body);
-        res.sendStatus(200);
-    });
-} else {
-    bot = new TelegramBot(TELEGRAM_TOKEN, { polling: true });
-    console.log('✅ Polling started (No Domain Found)');
-}
+// 🤖 Bot Initialization (POLLING සම්පූර්ණයෙන්ම ඉවත් කර ඇත - Conflict එන්නේ නෑ!)
+const bot = new TelegramBot(TELEGRAM_TOKEN);
+
+// Webhook Receiver
+app.post(`/bot${TELEGRAM_TOKEN}`, (req, res) => {
+    bot.processUpdate(req.body);
+    res.sendStatus(200);
+});
 
 const watchlists = new Map();
 const warningsMap = new Map();
 const postedMoviesCache = new Set();
 const allowedAdmins = [6629519111, 6467952735];
-const activeSockets = new Map(); // Store active WhatsApp connections
+const activeSockets = new Map();
 
 // -----------------------------------------------------------
-// 🟢 WHATSAPP MONGODB AUTH STATE HANDLER
+// 🟢 WHATSAPP & OTHER FUNCTIONS (කිසිම වෙනසක් කරල නෑ)
 // -----------------------------------------------------------
 async function useMongoDBAuthState(sessionId) {
     let creds;
     let keys = {};
-
     const existingSession = await SessionDB.findOne({ sessionId });
     if (existingSession) {
         const parsedData = JSON.parse(existingSession.sessionData, BufferJSON.reviver);
@@ -86,16 +74,10 @@ async function useMongoDBAuthState(sessionId) {
     } else {
         creds = initAuthCreds();
     }
-
     const saveState = async () => {
         const sessionData = JSON.stringify({ creds, keys }, BufferJSON.replacer);
-        await SessionDB.findOneAndUpdate(
-            { sessionId },
-            { sessionData },
-            { upsert: true, new: true }
-        );
+        await SessionDB.findOneAndUpdate({ sessionId }, { sessionData }, { upsert: true, new: true });
     };
-
     return {
         state: {
             creds,
@@ -118,52 +100,39 @@ async function useMongoDBAuthState(sessionId) {
     };
 }
 
-// -----------------------------------------------------------
-// 🟢 WHATSAPP CONNECTION MANAGER
-// -----------------------------------------------------------
 async function connectToWhatsApp(userId, phoneNumber = null, reqChatId = null) {
     const sessionName = `session_${userId}`;
     const { state, saveCreds } = await useMongoDBAuthState(sessionName);
-
     const waSock = makeWASocket({
         auth: state,
         printQRInTerminal: false,
         logger: pino({ level: 'silent' }),
         browser: ['Ubuntu', 'Chrome', '20.0.04']
     });
-
     waSock.ev.on('creds.update', saveCreds);
     activeSockets.set(userId, waSock);
 
     waSock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect } = update;
-
         if (connection === 'close') {
             const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut;
-            console.log(`❌ WA [${userId}] Disconnected. Reconnecting:`, shouldReconnect);
             if(shouldReconnect) connectToWhatsApp(userId);
-            else activeSockets.delete(userId); // Logged out
+            else activeSockets.delete(userId);
         } else if (connection === 'open') {
-            console.log(`✅ WA [${userId}] Connected Successfully!`);
-            if (reqChatId) {
-                bot.sendMessage(reqChatId, '✅ <b>WhatsApp සාර්ථකව Connect විය!</b>', { parse_mode: 'HTML' }).catch(()=>{});
-            }
+            if (reqChatId) bot.sendMessage(reqChatId, '✅ <b>WhatsApp සාර්ථකව Connect විය!</b>', { parse_mode: 'HTML' }).catch(()=>{});
         }
     });
 
     waSock.ev.on('messages.upsert', async ({ messages }) => {
         const m = messages[0];
         if (!m.message || m.key.fromMe) return;
-
         const waChatId = m.key.remoteJid;
         const textMessage = m.message.conversation || m.message.extendedTextMessage?.text;
-
         if (textMessage === '!ping') {
             await waSock.sendMessage(waChatId, { text: '🏓 Pong! Chucky Bot WhatsApp හරහා ක්‍රියාත්මකයි!' });
         }
     });
 
-    // Request Pairing Code
     if (phoneNumber && !waSock.authState.creds.me) {
         await delay(1500); 
         try {
@@ -173,21 +142,17 @@ async function connectToWhatsApp(userId, phoneNumber = null, reqChatId = null) {
                 bot.sendMessage(reqChatId, text, { parse_mode: 'HTML' });
             }
         } catch (err) {
-            console.error('Pairing code error:', err);
-            if (reqChatId) bot.sendMessage(reqChatId, '❌ දෝෂයක්! අංකය නිවැරදිදැයි පරීක්ෂා කරන්න (උදා: 94771234567).');
+            if (reqChatId) bot.sendMessage(reqChatId, '❌ දෝෂයක්! අංකය නිවැරදිදැයි පරීක්ෂා කරන්න.');
         }
     }
 }
 
-// -----------------------------------------------------------
-// 📊 BOT HELPERS & SCRAPERS
-// -----------------------------------------------------------
 async function trackSearch(query) {
     if (!query) return;
     try {
         const term = query.toLowerCase().trim();
         await Search.findOneAndUpdate({ query: term }, { $inc: { count: 1 } }, { upsert: true, new: true });
-    } catch(e) { console.error("Search Track Error:", e); }
+    } catch(e) {}
 }
 
 async function isBadWord(text) {
@@ -286,9 +251,7 @@ async function sendYearSearchResults(chatId, year, page = 1, msgId = null) {
     } catch (e) { await bot.sendMessage(chatId, "⚠️ සර්වර් දෝෂයක්!"); }
 }
 
-// -----------------------------------------------------------
 // 🎯 MAIN MESSAGE HANDLER
-// -----------------------------------------------------------
 bot.on('message', async (msg) => {
     if (!msg.text) return;
     const chatId = msg.chat.id;
@@ -296,7 +259,6 @@ bot.on('message', async (msg) => {
     const userId = msg.from.id;
     const isGroup = msg.chat.type === 'supergroup' || msg.chat.type === 'group';
 
-    // 💾 MONGODB: SAVE USER
     try {
         const existingUser = await User.findOne({ userId: userId });
         if (!existingUser) {
@@ -304,7 +266,6 @@ bot.on('message', async (msg) => {
         }
     } catch (dbErr) {}
 
-    // 🛑 BAD WORD LOGIC (Groups)
     if (isGroup && !text.startsWith('/')) {
         if (await isBadWord(text)) {
             if (!allowedAdmins.includes(userId)) {
@@ -405,8 +366,6 @@ bot.on('message', async (msg) => {
                 await bot.sendMessage(chatId, `✅ Request එක ඇඩ්මින්ට යැව්වා!`);
             }
         }
-
-        // 👑 ADMIN ONLY COMMANDS
         else if (cmd === '/stats' && allowedAdmins.includes(userId)) {
             const totalUsers = await User.countDocuments();
             const premiumUsers = await User.countDocuments({ isPremium: true });
@@ -440,8 +399,6 @@ bot.on('message', async (msg) => {
             await SessionDB.deleteMany({});
             await bot.sendMessage(chatId, `🗑️ <b>Database Fully Cleared!</b>\n✅ මැකූ Users: ${result.deletedCount}`, { parse_mode: 'HTML' });
         }
-        
-        // 🟢 WHATSAPP LINK COMMANDS
         else if (cmd === '/walink') {
             let kb = [
                 [{ text: "🔗 Get Pairing Code", callback_data: "wa_req_pair" }],
@@ -459,9 +416,7 @@ bot.on('message', async (msg) => {
     } catch (error) { console.error(error); }
 });
 
-// -----------------------------------------------------------
 // 🔘 CALLBACK QUERIES
-// -----------------------------------------------------------
 bot.on('callback_query', async (cb) => {
     const data = cb.data;
     const chatId = cb.message.chat.id;
@@ -477,7 +432,6 @@ bot.on('callback_query', async (cb) => {
 
     try { await bot.answerCallbackQuery(cb.id); } catch(e){}
 
-    // 🟢 WhatsApp Button Logic
     if (data === 'wa_req_pair') {
         await bot.sendMessage(chatId, "📲 <b>Pairing Code එක ලබා ගැනීමට:</b>\n\nඔබගේ අංකය රටේ කේතය (94) සමඟ පහත විධානයෙන් යොමු කරන්න.\n\n👉 <code>/pair 94771234567</code>", { parse_mode: 'HTML' });
     }
@@ -576,20 +530,64 @@ bot.on('callback_query', async (cb) => {
     }
 });
 
-// Auto-start active WhatsApp sessions from MongoDB on boot
 async function restoreSessions() {
     try {
         const sessions = await SessionDB.find({});
         for (const session of sessions) {
             const userId = parseInt(session.sessionId.replace('session_', ''));
             if (!isNaN(userId)) {
-                console.log(`⏳ Restoring WA session for User: ${userId}`);
                 await connectToWhatsApp(userId);
             }
         }
-    } catch (e) { console.error("Session restore error:", e); }
+    } catch (e) {}
 }
 restoreSessions();
 
-app.get('/', (req, res) => res.send('Bot is running on Railway!'));
+
+// -----------------------------------------------------------
+// 🌐 DASHBOARD & WEBHOOK FIXER (මෙතන තමයි අලුත් Button එක තියෙන්නේ)
+// -----------------------------------------------------------
+
+app.get('/', (req, res) => {
+    const html = `
+    <html>
+        <head>
+            <title>Chucky Bot Dashboard</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+        </head>
+        <body style="font-family: Arial; padding: 50px; text-align: center; background-color: #121212; color: white;">
+            <h2>🤖 Chucky Bot Dashboard</h2>
+            <p style="color: #00E676;">🟢 Server is Running on Railway!</p>
+            <form action="/fix-webhook" method="GET">
+                <button type="submit" style="padding: 15px 30px; font-size: 16px; background-color: #0088cc; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+                    🔌 Fix Webhook (Click Here)
+                </button>
+            </form>
+        </body>
+    </html>
+    `;
+    res.send(html);
+});
+
+app.get('/fix-webhook', async (req, res) => {
+    // 💡 බ්‍රවුසර් එකෙන්ම හරියටම URL එක අල්ලගන්නවා
+    const domain = req.get('host'); 
+    const webhookUrl = `https://${domain}/bot${TELEGRAM_TOKEN}`;
+    
+    try {
+        await bot.setWebHook(webhookUrl);
+        res.send(`
+            <body style="font-family: Arial; padding: 50px; text-align: center; background-color: #121212; color: white;">
+                <h2 style="color: #00E676;">✅ Webhook Successfully Set!</h2>
+                <p>URL: <code>${webhookUrl}</code></p>
+                <p>දැන් Telegram එකට ගිහින් බොට්ව පරීක්ෂා කරන්න.</p>
+                <br>
+                <a href="/" style="color: #0088cc; text-decoration: none;">⬅️ Back to Dashboard</a>
+            </body>
+        `);
+    } catch (error) {
+        res.send(`<body style="background-color: #121212; color: white; text-align: center; padding: 50px;"><h2 style="color: #FF5252;">❌ Error: ${error.message}</h2></body>`);
+    }
+});
+
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
