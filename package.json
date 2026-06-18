@@ -4,14 +4,17 @@
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js"
-  },
+{
+  "name": "your-bot-name",
+  "version": "1.0.0",
+  "main": "bot.js",
   "dependencies": {
-    "@whiskeysockets/baileys": "^6.7.5",
-    "pino": "^8.20.0"
     "axios": "^1.6.8",
     "express": "^4.19.2",
     "mongoose": "^8.4.0",
     "node-telegram-bot-api": "^0.65.0",
-    "cheerio": "^1.0.0-rc.12"
+    "cheerio": "^1.0.0-rc.12",
+    "@whiskeysockets/baileys": "^6.7.5",
+    "pino": "^8.20.0"
   }
 }
