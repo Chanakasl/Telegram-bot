@@ -2,9 +2,10 @@ const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
 const express = require('express');
 const mongoose = require('mongoose');
+const cheerio = require('cheerio'); // අලුත් Scraper ලයිබ්‍රරි එක
 
 const app = express();
-app.use(express.json()); // ⚠️ Webhook වලට මේක අනිවාර්යයි!
+app.use(express.json()); // ⚠️ Webhook වලට අනිවාර්යයි
 const PORT = process.env.PORT || 3000;
 
 // 🔑 Environment Variables
@@ -28,14 +29,14 @@ const userSchema = new mongoose.Schema({
     userId: { type: Number, unique: true },
     firstName: String,
     username: String,
-    isPremium: { type: Boolean, default: false },
+    isPremium: { type: Boolean, default: false }, // 👑 VIP SYSTEM
     joinedAt: { type: Date, default: Date.now }
 });
 const User = mongoose.model('User', userSchema);
 
 const searchSchema = new mongoose.Schema({
     query: { type: String, unique: true },
-    count: { type: Number, default: 1 }
+    count: { type: Number, default: 1 } // 🔍 SEARCH HISTORY
 });
 const Search = mongoose.model('Search', searchSchema);
 
@@ -86,13 +87,31 @@ async function isBadWord(text) {
     } catch (err) { return false; }
 }
 
-// 🔍 SINHALASUB API
+// 🔍 CINESUBZ WEB SCRAPER (CHEERIO)
 async function getSinhalaSubLink(title) {
     try {
-        const res = await axios.get(`https://sinhalasub.lk/wp-json/wp/v2/posts?search=${encodeURIComponent(title)}&per_page=1`, { timeout: 4000 });
-        if (res.data && res.data.length > 0) return res.data[0].link;
-    } catch (err) {}
-    return `https://sinhalasub.lk/?s=${encodeURIComponent(title)}`;
+        const searchUrl = `https://cinesubz.co/?s=${encodeURIComponent(title)}`;
+        const { data } = await axios.get(searchUrl, { 
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+            timeout: 5000 
+        });
+
+        const $ = cheerio.load(data);
+        let subLink = null;
+
+        $('article').first().each((i, el) => {
+            const link = $(el).find('a').attr('href');
+            if (link) {
+                subLink = link;
+            }
+        });
+
+        return subLink ? subLink : searchUrl;
+
+    } catch (err) {
+        console.error("Scraping Error:", err.message);
+        return `https://cinesubz.co/?s=${encodeURIComponent(title)}`;
+    }
 }
 
 // 📄 SEARCH FUNCTIONS
@@ -177,17 +196,14 @@ bot.on('message', async (msg) => {
     const text = msg.text;
     const userId = msg.from.id;
     const isGroup = msg.chat.type === 'supergroup' || msg.chat.type === 'group';
-    const isPrivate = msg.chat.type === 'private';
 
-    // 💾 MONGODB: SAVE USER
-    if (isPrivate) {
-        try {
-            const existingUser = await User.findOne({ userId: userId });
-            if (!existingUser) {
-                await User.create({ userId: userId, firstName: msg.from.first_name || 'Unknown', username: msg.from.username || '' });
-            }
-        } catch (dbErr) {}
-    }
+    // 💾 MONGODB: SAVE USER (Group & Private - හැමෝම සේව් වෙනවා)
+    try {
+        const existingUser = await User.findOne({ userId: userId });
+        if (!existingUser) {
+            await User.create({ userId: userId, firstName: msg.from.first_name || 'Unknown', username: msg.from.username || '' });
+        }
+    } catch (dbErr) {}
 
     // 🛑 BAD WORD LOGIC (Groups)
     if (isGroup && !text.startsWith('/')) {
@@ -387,6 +403,14 @@ bot.on('callback_query', async (cb) => {
     const msgId = cb.message.message_id;
     const userId = cb.from.id;
 
+    // 💾 MONGODB: SAVE USER ON BUTTON CLICK
+    try {
+        const existingUser = await User.findOne({ userId: userId });
+        if (!existingUser) {
+            await User.create({ userId: userId, firstName: cb.from.first_name || 'Unknown', username: cb.from.username || '' });
+        }
+    } catch (dbErr) {}
+
     try { await bot.answerCallbackQuery(cb.id); } catch(e){}
 
     if (data === 'vip_locked') {
@@ -439,6 +463,8 @@ bot.on('callback_query', async (cb) => {
             const embedId = m.imdb_id || m.id;
             const title = isTv ? m.name : m.title;
             const date = isTv ? m.first_air_date : m.release_date;
+            
+            // 🚀 New Web Scraper function called here!
             const subUrl = await getSinhalaSubLink(title);
             
             // Trailer link
