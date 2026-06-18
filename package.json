@@ -6,6 +6,8 @@
     "start": "node bot.js"
   },
   "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.5",
+    "pino": "^8.20.0"
     "axios": "^1.6.8",
     "express": "^4.19.2",
     "mongoose": "^8.4.0",
