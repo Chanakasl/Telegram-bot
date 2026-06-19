@@ -45,10 +45,10 @@ const sessionSchema = new mongoose.Schema({
 });
 const SessionDB = mongoose.model('SessionDB', sessionSchema);
 
-// 🤖 Bot Initialization (POLLING සම්පූර්ණයෙන්ම ඉවත් කර ඇත - Conflict එන්නේ නෑ!)
+// 🤖 Bot Initialization (Polling සම්පූර්ණයෙන්ම ඉවත් කර ඇත)
 const bot = new TelegramBot(TELEGRAM_TOKEN);
 
-// Webhook Receiver
+// Webhook Receiver Endpoint
 app.post(`/bot${TELEGRAM_TOKEN}`, (req, res) => {
     bot.processUpdate(req.body);
     res.sendStatus(200);
@@ -61,7 +61,7 @@ const allowedAdmins = [6629519111, 6467952735];
 const activeSockets = new Map();
 
 // -----------------------------------------------------------
-// 🟢 WHATSAPP & OTHER FUNCTIONS (කිසිම වෙනසක් කරල නෑ)
+// 🟢 WHATSAPP FUNCTIONS
 // -----------------------------------------------------------
 async function useMongoDBAuthState(sessionId) {
     let creds;
@@ -142,11 +142,14 @@ async function connectToWhatsApp(userId, phoneNumber = null, reqChatId = null) {
                 bot.sendMessage(reqChatId, text, { parse_mode: 'HTML' });
             }
         } catch (err) {
-            if (reqChatId) bot.sendMessage(reqChatId, '❌ දෝෂයක්! අංකය නිවැරදිදැයි පරීක්ෂා කරන්න.');
+            if (reqChatId) bot.sendMessage(reqChatId, '❌ දෝෂයක්! අංකය නිවැරදිදැයි පරීක්ෂා කරන්න (උදා: 94771234567).');
         }
     }
 }
 
+// -----------------------------------------------------------
+// 📊 BOT HELPERS & SCRAPERS
+// -----------------------------------------------------------
 async function trackSearch(query) {
     if (!query) return;
     try {
@@ -251,7 +254,9 @@ async function sendYearSearchResults(chatId, year, page = 1, msgId = null) {
     } catch (e) { await bot.sendMessage(chatId, "⚠️ සර්වර් දෝෂයක්!"); }
 }
 
+// -----------------------------------------------------------
 // 🎯 MAIN MESSAGE HANDLER
+// -----------------------------------------------------------
 bot.on('message', async (msg) => {
     if (!msg.text) return;
     const chatId = msg.chat.id;
@@ -399,6 +404,8 @@ bot.on('message', async (msg) => {
             await SessionDB.deleteMany({});
             await bot.sendMessage(chatId, `🗑️ <b>Database Fully Cleared!</b>\n✅ මැකූ Users: ${result.deletedCount}`, { parse_mode: 'HTML' });
         }
+
+        // 🟢 WHATSAPP LINK COMMANDS (සැමට විවෘතයි)
         else if (cmd === '/walink') {
             let kb = [
                 [{ text: "🔗 Get Pairing Code", callback_data: "wa_req_pair" }],
@@ -416,7 +423,9 @@ bot.on('message', async (msg) => {
     } catch (error) { console.error(error); }
 });
 
+// -----------------------------------------------------------
 // 🔘 CALLBACK QUERIES
+// -----------------------------------------------------------
 bot.on('callback_query', async (cb) => {
     const data = cb.data;
     const chatId = cb.message.chat.id;
@@ -530,6 +539,7 @@ bot.on('callback_query', async (cb) => {
     }
 });
 
+// Auto-start active WhatsApp sessions from MongoDB on boot
 async function restoreSessions() {
     try {
         const sessions = await SessionDB.find({});
@@ -545,7 +555,7 @@ restoreSessions();
 
 
 // -----------------------------------------------------------
-// 🌐 DASHBOARD & WEBHOOK FIXER (මෙතන තමයි අලුත් Button එක තියෙන්නේ)
+// 🌐 DASHBOARD & WEBHOOK FIXER
 // -----------------------------------------------------------
 
 app.get('/', (req, res) => {
@@ -570,7 +580,6 @@ app.get('/', (req, res) => {
 });
 
 app.get('/fix-webhook', async (req, res) => {
-    // 💡 බ්‍රවුසර් එකෙන්ම හරියටම URL එක අල්ලගන්නවා
     const domain = req.get('host'); 
     const webhookUrl = `https://${domain}/bot${TELEGRAM_TOKEN}`;
     
